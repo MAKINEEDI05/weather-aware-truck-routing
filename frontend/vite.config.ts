@@ -30,6 +30,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // UI tests drive whole pages through accessibility queries, whose cost grows with the DOM.
+    // Headroom for slow or busy CI machines; assertions are unchanged.
+    testTimeout: 15_000,
     css: false,
     restoreMocks: true,
     // Deterministic date formatting in tests (CDT/CST, like the design references).

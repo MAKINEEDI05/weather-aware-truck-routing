@@ -183,7 +183,7 @@ spaced about a minute apart.
 | File | Covers |
 |---|---|
 | `api/client.test.ts` | Base URL, health parsing, geocode/plan requests, error body → `ApiError` (code, details, retry-after), network failure, contract check, aborts |
-| `App.test.tsx` | API status (checking/ok/unreachable/HTTP error/retry/timeout — Phase 1 tests kept); landing → planner; sidebar navigation; mobile tab bar; empty state; 404 page; About rules |
+| `App.test.tsx` | API status (checking/ok/unreachable/HTTP error/retry/timeout — Phase 1 tests kept); landing → planner; app-bar navigation; mobile tab bar; empty state; 404 page; About rules |
 | `features/trip-form/validation.test.ts` | Missing places, < 1 mi apart, departure window incl. 15-min grace, load bounds/format, ISO-with-offset conversion, next-hour default, backend 400 → fields, inputs-changed detection |
 | `pages/PlanPage.test.tsx` | Trip form: Find → candidates → "Show 1 more" → select → chip → Change; no-results message; submit disabled until both places; field errors, summary and focus; swap; interval. Planning: request body, loading text, navigate to routes; NO_ROUTE_FOUND with Edit/Retry; RATE_LIMITED with retry hint and preserved inputs; ROUTING_NOT_CONFIGURED; backend 400 on fields; unreachable backend; "inputs changed" hint |
 | `pages/RoutesPage.test.tsx` | Cards in rank order with badges, figures, No Travel/Unknown lines and accessible miles bar; recommendation line; warnings; card and map route selection; no-eligible-route; fewer than three routes |

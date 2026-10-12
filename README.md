@@ -23,6 +23,8 @@ weather, load weight and travel time (Spotter full-stack assessment).
    recommended (app policy). The explanation names the criterion that decided.
 6. A map shows all routes, risk-coloured checkpoints with ETAs and popups, and route summaries. A
    **corridor heatmap** with a **0–48 h slider** recolours instantly from data already loaded.
+7. Reloading the page restores the last trip in that browser tab without new requests, labelled
+   with when it was calculated; changed inputs mark results outdated; **New trip** clears it.
 
 Pages: landing `/`, planner `/plan`, route comparison `/routes`, route details `/routes/:id`,
 recommendation `/recommendation`, heatmap `/heatmap`, about `/about`.

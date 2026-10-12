@@ -99,7 +99,7 @@ unless measured size requires it.
 | DEC-43 | **Health check on two paths:** `/api/v1/health/` (contract) and `/api/health/` (alias requested in Phase 1). Every path ends with `/`. | Phase 1 request plus blueprint contract. |
 | DEC-44 | **Versions:** React 19 + React Leaflet 5, TypeScript 6.0, Vite 8, Tailwind 4, Django 5.2 LTS, DRF 3.18. | Verified compatible in Phase 1; React Leaflet 5 requires React 19. |
 | DEC-45 | **No database configured** (`DATABASES = {}`). | Nothing persists; Django needs neither SQLite nor `migrate`. |
-| DEC-46 | **Typography and icons:** Inter (self-hosted via `@fontsource-variable/inter`) and `lucide-react` outline icons. | Matches the design references; no runtime font CDN. |
+| DEC-46 | **Typography and icons:** Overpass + Overpass Mono (self-hosted via `@fontsource-variable/*`; Inter before the independent redesign, `docs/DESIGN_SYSTEM.md`) and `lucide-react` outline icons. | Overpass descends from Highway Gothic, the US road-sign lettering; mono figures align as tables. No runtime font CDN. |
 | DEC-47 | **No via-point fallback routes.** The evidence gate (DEC-22) was run on 2026-10-12: TomTom returned 3 routes for all 5 evidence trips (VF-13), so a fallback is not needed for typical trips. When fewer are returned (seen once: 2 routes at +30 h), the app shows the real count and warning `FEWER_THAN_THREE_ROUTES`. | Never fabricate routes; the evidence does not justify the extra complexity. |
 | DEC-48 | **Weather cache:** each location's hourly series is cached for `WEATHER_CACHE_TTL_S` (default 1,800 s), keyed by the exact coordinates and the UTC window. Only successful series are cached. | Reduces Open-Meteo calls on re-plans (VF-7). |
 | DEC-49 | **Decimal formatting in explanations:** miles are shown to 1 decimal, or 2 decimals when the 1-decimal values look equal but differ at the 0.01-mi ranking precision (DEC-20). | Explanations must never say "25.0 vs 25.0 → more". |
@@ -123,7 +123,7 @@ unless measured size requires it.
 | C-5 | The design says "Compare three truck routes"; the provider may return fewer (VF-8). | Copy says "up to three"; the real count is always shown (DEC-47). |
 | C-6 | The Phase 1 request said `/api/health/`; the blueprint contract says `/api/v1/health`. | Both are served (DEC-43). |
 | C-7 | The PDF evaluation weights total 90%. | Not resolvable (OPEN-1). |
-| C-8 | The design's mobile navigation has four tabs and no Recommendation tab. | Recommendation is reached from the Routes view on mobile (banner and link) and from the sidebar on desktop. |
+| C-8 | The design's mobile navigation has four tabs and no Recommendation tab. | Recommendation is reached from the Routes view on mobile (banner and link) and from the top app bar on desktop. |
 
 ## 6. Assumptions
 

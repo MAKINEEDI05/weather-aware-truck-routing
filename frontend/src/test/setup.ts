@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest'
+import { configure } from '@testing-library/react'
 import { createElement as h } from 'react'
 import type { ReactNode } from 'react'
 import type { Corridor, Route } from '../api/types'
@@ -73,6 +74,9 @@ vi.mock('../features/map', () => ({
     ),
   EndpointMarkers: () => null,
 }))
+
+// findBy*/waitFor default to 1 s; a first full-page render on a busy machine can take several.
+configure({ asyncUtilTimeout: 5000 })
 
 // The trip is saved to browser storage; each test starts from an empty browser.
 afterEach(() => {

@@ -141,22 +141,27 @@ corridor constants are code constants, because they are not environment-specific
 |---|---|
 | `main.tsx`, `App.tsx` | Entry; router (DEC-29) and providers |
 | `api/` | `client.ts` (fetch wrappers, `ApiError` with contract code/details/retry hint), `types.ts` (mirror of the API contract), `useApiHealth.ts` |
-| `state/TripContext.tsx` | Form draft, plan status/error, result, selected route/checkpoint/hour; `submitPlan()` / `retryPlan()` with abort and a 120 s timeout |
-| `layouts/AppLayout.tsx` | Workspace shell: navy sidebar (≥ 1024 px), mobile bottom tab bar, health check shared with pages via the outlet context |
+| `state/TripContext.tsx` | Form draft, plan status/error, result, selected route/checkpoint/hour, `restored` / `outdated` flags; `submitPlan()` / `retryPlan()` with abort and a 120 s timeout; `newTrip()` |
+| `state/tripStorage.ts` | Saved trip in `sessionStorage` (DEC-56): versioned result and UI records, 12 h expiry, structural validation on load, quota-safe writes |
+| `layouts/AppLayout.tsx` | Workspace shell: night-indigo app bar with the numbered workflow and API status (≥ 1024 px), bottom tab bar (< 1024 px), offline banner, skip link |
 | `pages/` | `LandingPage` (own header/footer), `PlanPage`, `RoutesPage`, `RouteDetailsPage`, `RecommendationPage`, `HeatmapPage`, `AboutPage`, `NotFoundPage` |
 | `features/trip-form/` | `TripForm.tsx`, `LocationSearch.tsx`, `validation.ts` |
-| `features/map/` | `index.ts` (Leaflet-backed exports, mocked in tests), `TripMap.tsx` (base map, OSM + Open-Meteo attribution, fit bounds), `layers.tsx` (`RouteLayer`, `CheckpointLayer`, `EndpointMarkers`, `CorridorLayer`), `popups.tsx` (`CheckpointPopup`, `RouteSummaryPopup`), `MapLegend.tsx` |
-| `features/routes/` | `RouteCard.tsx`, `RouteStats.tsx`, `CheckpointTable.tsx` |
+| `features/map/` | `index.ts` (Leaflet-backed exports, mocked in tests), `TripMap.tsx` (base map, OSM + Open-Meteo attribution, fit bounds), `layers.tsx` (`RouteLayer`, `CheckpointLayer`, `EndpointMarkers`, `CorridorLayer`), `popups.tsx` (`CheckpointPopup`, `RouteSummaryPopup`), `MapLegend.tsx` (key bar) |
+| `features/routes/` | `RouteCard.tsx`, `RouteStats.tsx`, `CheckpointTable.tsx`, `CheckpointDetail.tsx` (shared by popups and the details inspector) |
 | `features/recommendation/` | `criteria.ts` (criteria, runner-up, "why not" text), `DecisionTrace.tsx`, `ComparisonTable.tsx` |
-| `features/forecast/` | `ForecastSlider.tsx` |
-| `components/` | `TopBar` (page header, trip chips, API status, offline banner), `ApiStatus`, `BrandMark`, `RiskBadge`/`RiskDot`, `RiskMilesBar`, `StateViews` (`StateView`, `LoadingState`), `PlanStates` (`NoTripState`, `PlanErrorState`), `WarningsBanner`, `RulesContent` (`RiskRulesTable`, `RankingList`) |
-| `lib/` | `risk.ts` (level → colour/label/code, miles per level), `routes.ts` (route colours, rank order), `format.ts` (miles, durations, local dates), `corridor.ts` (slider hour → time, cell styles), `bounds.ts`, `geo.ts`, `ui.ts` (button classes), `useMediaQuery.ts` |
+| `features/forecast/` | `ForecastSlider.tsx` (slider, per-hour corridor histogram, driving window) |
+| `components/` | `PageHeader` (h1, document title, `TripStrip` with Edit trip / New trip), `ResultNotice` (restored / outdated), `RouteShield`/`RouteSwatch`, `RouteProfile` (risk along a route), `ApiStatus`, `BrandMark`, `RiskBadge`/`RiskDot`, `RiskMilesBar`, `StateViews` (`StateView`, `LoadingState`), `PlanStates` (`NoTripState`, `PlanErrorState`), `WarningsBanner`, `RulesContent` (`RiskRulesTable`, `RankingList`) |
+| `lib/` | `risk.ts` (level → colour/label/code/pattern, miles per level), `routes.ts` (route colours, rank order), `format.ts` (miles, durations, local dates, ages), `rulesCopy.ts` (display copy of the rules), `corridor.ts` (slider hour → time, cell styles), `bounds.ts`, `geo.ts`, `ui.ts` (button classes), `useMediaQuery.ts` |
 | `assets/brand.ts` | Replaceable brand asset slots (DEC-40) |
 
 ### 3.2 State and data flow
 
-- `TripProvider` keeps state in memory (DEC-42): `draft` (form), `plan` (`idle | loading |
-  success | error`), `selectedRouteId`, `selectedHour`.
+- `TripProvider` holds `draft` (form), `status` (`idle | loading | error`), `result`,
+  `selectedRouteId`, `selectedCheckpoint` and `hour`. On start it restores the last trip from
+  `sessionStorage` (DEC-56) without any request; after each successful plan the result is saved
+  once, and the small UI record is saved as it changes. `restored` labels restored results with
+  their calculation time; `outdated` is true when the draft no longer matches `result.request`.
+  `newTrip()` aborts any request and clears state and storage.
 - Submit → `POST /trips/plan/` with a 120 s client timeout → on success, navigate to `/routes`.
   Inputs are preserved on error and can be retried.
 - Pages that need a result show an empty state with "Plan a trip" when there is none.
@@ -167,10 +172,13 @@ corridor constants are code constants, because they are not environment-specific
 ### 3.3 Map rendering
 
 Leaflet with `preferCanvas` (one canvas renderer for routes and markers). Routes are
-`Polyline`s with a white casing, checkpoints are `CircleMarker`s, and corridor cells are imperative
-`L.rectangle`s in their own canvas pane below the routes. OSM tile attribution, plus "Weather:
-Open-Meteo (CC BY 4.0)", appears in the attribution control. Bounds padding adapts to the floating
-panels on desktop (`useIsDesktop`).
+`Polyline`s with a white casing and a lettered shield marker (keyboard-selectable), checkpoints are
+`CircleMarker`s, and corridor cells are imperative, non-interactive `L.rectangle`s in their own
+canvas pane below the routes. Because the overlay canvas above takes pointer events, cells are
+picked from the clicked position on the grid (`map.on('click')`). Tiles are greyed with a CSS
+filter so only risk and routes carry colour. OSM tile attribution, plus "Weather: Open-Meteo
+(CC BY 4.0)", appears in the attribution control. Maps fit the trip without animation (an animation
+still running at unmount makes Leaflet read a removed pane); padding leaves room for the key bar.
 
 ### 3.4 Build
 
