@@ -1,4 +1,4 @@
-// Replaceable brand asset slots (docs/DESIGN_SYSTEM.md §8, DEC-40).
+// Replaceable brand asset slots (DEC-40).
 // The client supplies the final brand assets. Until then, each slot is `null` and the UI renders
 // a restrained, generic fallback — no invented logo or imagery.
 
@@ -6,7 +6,7 @@ export const BRAND_NAME = 'Weather-Aware Truck Routing'
 
 /**
  * TODO(asset): brand logo mark.
- * Expected: square SVG, 64 × 64 viewBox, legible on navy (#0b1730) and on white.
+ * Expected: square SVG, 64 × 64 viewBox, legible on asphalt (#121418) and on white.
  * Place it at `frontend/public/brand/logo-mark.svg` and set this to '/brand/logo-mark.svg'.
  */
 export const BRAND_LOGO_SRC: string | null = null

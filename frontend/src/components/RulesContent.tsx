@@ -1,59 +1,48 @@
-import type { RiskLevel } from '../api/types'
-import { RiskDot } from './RiskBadge'
+import { RISK, riskPatternClass } from '../lib/risk'
+import { LOAD_RULES, RANKING_CRITERIA, RULE_LEVELS, RULE_ROWS } from '../lib/rulesCopy'
 
-// Display copy of the assessment rules (docs/REQUIREMENTS.md §3). The rules are applied only by
-// the backend (backend/trips/domain/risk.py); nothing here classifies anything.
-const COLUMNS: { level: RiskLevel; label: string }[] = [
-  { level: 'LOW', label: 'Low' },
-  { level: 'MODERATE', label: 'Moderate' },
-  { level: 'HIGH', label: 'High' },
-  { level: 'SEVERE', label: 'Severe' },
-  { level: 'NO_TRAVEL', label: 'No Travel' },
-]
+// Display only: the backend applies the rules (see src/lib/rulesCopy.ts).
 
-const ROWS: { condition: string; values: string[] }[] = [
-  { condition: 'Wind', values: ['<25 mph', '25–34', '35–44', '45–54', '≥55 mph'] },
-  { condition: 'Rain', values: ['<0.10 in/hr', '0.10–0.25', '0.25–0.50', '0.50–1.00', '>1.00'] },
-  { condition: 'Snow', values: ['<0.5 in/hr', '0.5–1.0', '1.0–2.0', '2.0–3.0', '>3.0'] },
-]
-
-const RANKING_CRITERIA = [
-  'Fewest Severe miles',
-  'Fewest High miles',
-  'Lowest average risk',
-  'Shortest travel time',
-]
-
+/** Threshold matrix. Each level column is headed by its colour chip and name. */
 export function RiskRulesTable() {
   return (
     <div>
       {/* relative: keeps sr-only (absolute) labels inside the scroll area on narrow screens */}
       <div className="relative overflow-x-auto">
-        <table className="w-full min-w-[520px] text-left text-sm">
+        <table className="w-full min-w-[540px] border-collapse text-left text-sm">
           <caption className="sr-only">Risk thresholds per checkpoint</caption>
           <thead>
-            <tr className="border-b border-line bg-slate-50">
-              <th scope="col" className="eyebrow px-3 py-2">
+            <tr>
+              <th scope="col" className="kicker border-b border-line px-3 pt-3 pb-2 align-bottom">
                 Condition
               </th>
-              {COLUMNS.map((column) => (
-                <th key={column.level} scope="col" className="eyebrow px-3 py-2">
-                  <span className="inline-flex items-center gap-1.5">
-                    <RiskDot level={column.level} />
-                    {column.label}
-                  </span>
+              {RULE_LEVELS.map((level) => (
+                <th
+                  key={level}
+                  scope="col"
+                  className="border-b border-line px-3 pt-0 pb-2 align-bottom text-[13px] font-semibold text-ink"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`mb-2 block h-1.5 rounded-b-[2px] ${riskPatternClass(level)}`}
+                    style={{ backgroundColor: RISK[level].color }}
+                  />
+                  {RISK[level].label}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row) => (
+            {RULE_ROWS.map((row) => (
               <tr key={row.condition} className="border-b border-line last:border-0">
                 <th scope="row" className="px-3 py-2.5 font-semibold text-ink">
                   {row.condition}
                 </th>
                 {row.values.map((value) => (
-                  <td key={value} className="px-3 py-2.5 text-ink-muted tabular-nums">
+                  <td
+                    key={value}
+                    className="num px-3 py-2.5 text-[13px] whitespace-nowrap text-ink-2"
+                  >
                     {value}
                   </td>
                 ))}
@@ -62,23 +51,48 @@ export function RiskRulesTable() {
           </tbody>
         </table>
       </div>
-      <p className="mt-3 px-3 text-sm text-ink-muted">
-        <strong className="font-semibold text-ink">Load rules</strong> · ≥55 mph → No Travel for any
-        load · 45–54 mph with &gt;30,000 lb → No Travel · 35–44 mph with &gt;40,000 lb → Severe
-      </p>
+      <div className="mt-3 rounded-md bg-paper px-3 py-2.5 text-sm text-ink-2">
+        <p className="font-semibold text-ink">Load rules — heavier loads, lower wind limits</p>
+        <ul className="mt-1 space-y-0.5">
+          {LOAD_RULES.map((rule) => (
+            <li key={rule.when}>
+              <span className="num text-[13px]">{rule.when}</span> with {rule.load} →{' '}
+              <span className="font-semibold text-ink">{rule.result}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }
 
-export function RankingList({ compact = false }: { compact?: boolean }) {
+/** The four ranking criteria as a numbered ladder: compared in order, the first difference wins. */
+export function RankingList({
+  compact = false,
+  layout = 'column',
+}: {
+  compact?: boolean
+  layout?: 'column' | 'row'
+}) {
+  const list =
+    layout === 'row'
+      ? 'grid gap-2 sm:grid-cols-2 xl:grid-cols-4'
+      : compact
+        ? 'space-y-2'
+        : 'divide-y divide-line'
   return (
-    <ol className={compact ? 'space-y-2' : 'divide-y divide-line'}>
+    <ol className={list}>
       {RANKING_CRITERIA.map((criterion, index) => (
-        <li key={criterion} className={`flex items-center gap-3 ${compact ? '' : 'py-3'}`}>
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
+        <li
+          key={criterion}
+          className={`flex items-center gap-3 ${
+            layout === 'row' ? 'rounded-md border border-line px-3 py-2.5' : compact ? '' : 'py-2.5'
+          }`}
+        >
+          <span className="num flex size-6 shrink-0 items-center justify-center rounded-[4px] border border-ink text-xs font-semibold text-ink">
             {index + 1}
           </span>
-          <span className="text-sm font-medium text-ink">{criterion}</span>
+          <span className="text-sm font-semibold text-ink">{criterion}</span>
         </li>
       ))}
     </ol>

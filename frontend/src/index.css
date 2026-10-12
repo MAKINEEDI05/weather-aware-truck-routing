@@ -1,45 +1,86 @@
-@import '@fontsource-variable/inter';
+@import '@fontsource-variable/overpass';
+@import '@fontsource-variable/overpass-mono';
 @import 'tailwindcss';
 
-/* Design tokens — docs/DESIGN_SYSTEM.md §2–§4. Risk and route colours live in src/lib. */
+/* Overpass's middle dot sits flush against the next word; borrow a centred one for U+00B7 only. */
+@font-face {
+  font-family: 'Separator Dot';
+  src: local('Arial'), local('Helvetica'), local('Liberation Sans'), local('DejaVu Sans');
+  unicode-range: U+00B7;
+}
+
+/*
+ * "Route sheet" design tokens.
+ * Principle: colour means data. The interface is drawn in asphalt, ink and paper; hue is reserved
+ * for risk levels (src/lib/risk.ts) and route identity (src/lib/routes.ts). Signal blue is used
+ * only for keyboard focus.
+ * Type: Overpass descends from Highway Gothic, the lettering of US road signs. Every measurement
+ * is set in Overpass Mono so figures align and read like instruments.
+ */
 @theme {
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans:
+    'Separator Dot', 'Overpass Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-mono: 'Overpass Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
-  --color-canvas: #f4f6fa;
+  --color-paper: #f2f1ed;
+  --color-paper-2: #e9e7e1;
   --color-surface: #ffffff;
-  --color-line: #e2e8f0;
-  --color-ink: #0f172a;
-  --color-ink-muted: #475569;
-  --color-ink-subtle: #64748b;
+  --color-line: #dcd9d1;
+  --color-line-strong: #bfbbb0;
+  --color-ink: #15171b;
+  --color-ink-2: #454951;
+  --color-ink-3: #62666e;
 
-  --color-navy-950: #0b1730;
-  --color-navy-900: #102042;
-  --color-navy-800: #1a2b52;
-  --color-navy-300: #a9b6d3;
+  --color-asphalt: #121418;
+  --color-asphalt-2: #1b1e24;
+  --color-asphalt-3: #2a2e36;
+  --color-fog: #a9aeb8;
 
-  --color-brand: #2563eb;
-  --color-brand-strong: #1d4ed8;
-  --color-brand-soft: #eff6ff;
+  --color-signal: #2f62f5;
+  --color-signal-on-dark: #8eaeff;
 
-  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06);
-  --shadow-overlay: 0 4px 16px rgb(15 23 42 / 0.1);
+  /* System states (not risk levels). */
+  --color-danger: #9b231a;
+  --color-danger-soft: #f9e0dd;
+  --color-caution: #735400;
+  --color-caution-soft: #faf1d3;
+  --color-closed: #4e1a55;
+  --color-closed-soft: #eee3ef;
+  --color-go: #1e6b3b;
+  --color-go-soft: #e6f2e9;
+
+  --shadow-float: 0 1px 2px rgb(18 20 24 / 0.08), 0 8px 24px rgb(18 20 24 / 0.12);
+
+  --animate-lane: lane 0.9s linear infinite;
+
+  @keyframes lane {
+    to {
+      background-position: 28px 0;
+    }
+  }
 }
 
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: var(--color-canvas);
+    background-color: var(--color-paper);
     color: var(--color-ink);
   }
 
   body {
     min-height: 100dvh;
+    background-color: var(--color-paper);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brand);
+    outline: 2px solid var(--color-signal);
     outline-offset: 2px;
+  }
+
+  .on-dark :focus-visible {
+    outline-color: var(--color-signal-on-dark);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -55,47 +96,266 @@
 }
 
 @layer components {
-  .card {
+  /* A sheet on the paper canvas. */
+  .panel {
     background-color: var(--color-surface);
     border: 1px solid var(--color-line);
-    border-radius: 0.75rem;
-    box-shadow: var(--shadow-card);
+    border-radius: 0.5rem;
   }
 
-  .overlay {
+  /* Anything that floats above the map. */
+  .float {
     background-color: var(--color-surface);
     border: 1px solid var(--color-line);
-    border-radius: 0.75rem;
-    box-shadow: var(--shadow-overlay);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-float);
   }
 
-  .eyebrow {
+  /* Small signage label: mono, upper case, tracked. */
+  .kicker {
+    font-family: var(--font-mono);
     font-size: 0.6875rem;
+    line-height: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+
+  /* Form field label: the same signage voice, one step larger and in ink. */
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
     line-height: 1rem;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-ink-subtle);
+    color: var(--color-ink);
+  }
+
+  /* Text input frame; the input inside is borderless. */
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 0.375rem;
+    background-color: var(--color-surface);
+    padding-inline: 0.75rem;
+  }
+
+  .field:focus-within {
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 1px var(--color-ink);
+  }
+
+  .field[data-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+
+  .field[data-invalid='true']:focus-within {
+    box-shadow: 0 0 0 1px var(--color-danger);
+  }
+
+  /* Measurements. */
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* Unknown: hatched, never a solid "Low-looking" fill. */
+  .hatch-unknown {
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.65) 0 2px,
+      transparent 2px 5px
+    );
+  }
+
+  /* No Travel: barricade stripes, so it differs from Severe by pattern as well as hue. */
+  .hatch-closed {
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.32) 0 3px,
+      transparent 3px 7px
+    );
+  }
+
+  /* Moving lane markings for indeterminate waits. */
+  .lane-dashes {
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--color-ink) 0 16px,
+      transparent 16px 28px
+    );
+    background-size: 28px 100%;
   }
 }
 
-/* Leaflet: inherit app typography and keep panes below app overlays. */
+/* --------------------------------------------------------------------------------------------- */
+/* Forecast timeline range input: square-shouldered thumb, 18 px wide (the histogram aligns to it) */
+/* --------------------------------------------------------------------------------------------- */
+
+.timeline-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.timeline-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-line-strong);
+}
+
+.timeline-range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-line-strong);
+}
+
+.timeline-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 24px;
+  margin-top: -10px;
+  border-radius: 4px;
+  border: 2px solid var(--color-surface);
+  background: var(--color-ink);
+  box-shadow: 0 1px 3px rgb(18 20 24 / 0.35);
+}
+
+.timeline-range::-moz-range-thumb {
+  width: 14px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid var(--color-surface);
+  background: var(--color-ink);
+  box-shadow: 0 1px 3px rgb(18 20 24 / 0.35);
+}
+
+.timeline-range:focus-visible {
+  outline: none;
+}
+
+.timeline-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+.timeline-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/* Leaflet                                                                                        */
+/* --------------------------------------------------------------------------------------------- */
+
 .leaflet-container {
   font: inherit;
   z-index: 0;
-  background: #e8ecf1;
+  background: #e4e2dc;
+}
+
+/* The basemap is context, not data: grey it out so risk colours carry the map. */
+.trip-map .leaflet-tile-pane {
+  filter: grayscale(1) sepia(0.1) contrast(0.92) brightness(1.04);
+}
+
+.leaflet-bar {
+  border: 1px solid var(--color-line-strong) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgb(18 20 24 / 0.1) !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a,
+.leaflet-touch .leaflet-bar a {
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.leaflet-bar a:hover {
+  background: var(--color-paper);
 }
 
 .leaflet-control-attribution {
   font-size: 11px;
+  background: rgb(255 255 255 / 0.88) !important;
 }
 
 .leaflet-popup-content-wrapper {
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow-overlay);
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--color-line);
+  box-shadow: var(--shadow-float);
 }
 
 .leaflet-popup-content {
   margin: 0;
-  min-width: 260px;
+  min-width: 240px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.leaflet-popup-close-button {
+  top: 6px !important;
+  right: 6px !important;
+}
+
+/* Div icons: route shields and trip endpoints. */
+.map-shield {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  border-radius: 5px;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgb(18 20 24 / 0.35);
+}
+
+.map-shield--selected {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 1px;
+}
+
+.leaflet-marker-icon:focus-visible .map-shield,
+.leaflet-marker-icon:focus-visible .map-endpoint {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+.map-endpoint {
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgb(18 20 24 / 0.35);
+}
+
+.map-endpoint--origin {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 5px solid var(--color-ink);
+  background: #ffffff;
+}
+
+.map-endpoint--destination {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 2px solid #ffffff;
+  background: var(--color-ink);
+  outline: 2px solid var(--color-ink);
 }

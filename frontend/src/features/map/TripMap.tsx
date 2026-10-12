@@ -21,7 +21,10 @@ interface TripMapProps {
   label?: string
 }
 
-/** Base map of the continental US (DEC-1) with OSM tiles and attribution. */
+/**
+ * Base map of the continental US (DEC-1) with OSM tiles and attribution. The tiles are greyed out in
+ * CSS (.trip-map) so that only risk and routes carry colour.
+ */
 export function TripMap({
   children,
   bounds = null,
@@ -36,8 +39,9 @@ export function TripMap({
       center={CONTINENTAL_US_CENTER}
       zoom={CONTINENTAL_US_ZOOM}
       preferCanvas
+      zoomSnap={0.5}
       zoomControl={false}
-      className={className}
+      className={`trip-map ${className}`}
       aria-label={label}
     >
       <TileLayer

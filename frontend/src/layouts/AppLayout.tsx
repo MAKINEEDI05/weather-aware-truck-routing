@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import type { LucideIcon } from 'lucide-react'
-import { Info, LayoutGrid, MapPin, Route, Star } from 'lucide-react'
+import { CloudOff, Info, Layers, MapPinned, Route } from 'lucide-react'
 import { useApiHealth } from '../api/useApiHealth'
+import { ApiStatus } from '../components/ApiStatus'
 import { BrandMark } from '../components/BrandMark'
-import type { LayoutContext } from '../components/TopBar'
 
 interface NavItem {
   to: string
@@ -13,15 +13,19 @@ interface NavItem {
   icon: LucideIcon
 }
 
-const NAV: NavItem[] = [
-  { to: '/plan', label: 'Plan trip', mobileLabel: 'Plan', icon: MapPin },
+// The workflow, in order. About sits apart from the numbered steps.
+const STEPS: NavItem[] = [
+  { to: '/plan', label: 'Plan trip', mobileLabel: 'Plan', icon: MapPinned },
   { to: '/routes', label: 'Routes', mobileLabel: 'Routes', icon: Route },
-  { to: '/recommendation', label: 'Recommendation', icon: Star },
-  { to: '/heatmap', label: 'Weather heatmap', mobileLabel: 'Heatmap', icon: LayoutGrid },
-  { to: '/about', label: 'About', mobileLabel: 'About', icon: Info },
+  { to: '/recommendation', label: 'Recommendation', icon: Route },
+  { to: '/heatmap', label: 'Weather heatmap', mobileLabel: 'Heatmap', icon: Layers },
 ]
+const ABOUT: NavItem = { to: '/about', label: 'About', mobileLabel: 'About', icon: Info }
 
-/** Workspace shell: navy sidebar (≥ 1024 px) or bottom tab bar (< 1024 px). */
+/**
+ * Workspace shell: a dark dispatch bar with the numbered workflow (≥ 1024 px) or a dark bottom tab
+ * bar (< 1024 px). Pages render their own title block below it.
+ */
 export function AppLayout() {
   const { health, retry } = useApiHealth()
   const { pathname } = useLocation()
@@ -30,75 +34,113 @@ export function AppLayout() {
     window.scrollTo(0, 0)
   }, [pathname])
 
-  const context: LayoutContext = { health, retryHealth: retry }
-
   return (
-    <div className="min-h-dvh bg-canvas">
+    <div className="flex min-h-dvh flex-col bg-paper">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[1000] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold"
       >
         Skip to content
       </a>
 
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-66 flex-col bg-navy-950 text-white lg:flex">
-        <Link to="/" className="flex items-center gap-3 px-5 pt-6 pb-8">
-          <BrandMark />
-          <span className="text-[15px] leading-tight font-semibold">
-            Weather-Aware
-            <br />
-            Truck Routing
-          </span>
-        </Link>
-        <p className="eyebrow px-6 !text-navy-300/80">Workspace</p>
-        <nav aria-label="Primary" className="mt-2 flex flex-col gap-1 px-3">
-          {NAV.map(({ to, label, icon: Icon }) => (
+      <header className="on-dark sticky top-0 z-[600] h-14 shrink-0 bg-asphalt text-white">
+        <div className="flex h-full items-center gap-4 px-4 lg:px-6">
+          <Link to="/" className="flex min-w-0 items-center gap-2.5">
+            <BrandMark size="sm" />
+            <span className="truncate text-[15px] leading-none font-bold tracking-tight">
+              Weather-Aware <span className="font-normal text-fog">Truck Routing</span>
+            </span>
+          </Link>
+
+          <nav aria-label="Primary" className="ml-4 hidden h-full items-stretch lg:flex">
+            {STEPS.map((item, index) => (
+              <BarLink key={item.to} item={item} step={index + 1} />
+            ))}
+            <span aria-hidden="true" className="mx-2 my-4 w-px bg-asphalt-3" />
+            <BarLink item={ABOUT} />
+          </nav>
+
+          <div className="ml-auto">
+            <ApiStatus health={health} onRetry={retry} />
+          </div>
+        </div>
+      </header>
+
+      {health.state === 'offline' && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 border-b border-[#e9b9b3] bg-danger-soft px-4 py-2.5 text-sm text-danger lg:px-6"
+        >
+          <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p>
+            <span className="font-semibold">Backend unavailable.</span> {health.message} Make sure
+            the Django server is running, then select Retry.
+          </p>
+        </div>
+      )}
+
+      <main id="main" tabIndex={-1} className="flex flex-1 flex-col pb-16 outline-none lg:pb-0">
+        <Outlet />
+      </main>
+
+      <nav
+        aria-label="Primary mobile"
+        className="on-dark fixed inset-x-0 bottom-0 z-[600] grid h-16 grid-cols-4 border-t border-asphalt-3 bg-asphalt pb-[env(safe-area-inset-bottom)] lg:hidden"
+      >
+        {[...STEPS, ABOUT]
+          .filter((item) => item.mobileLabel)
+          .map(({ to, mobileLabel, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium transition-colors ${
-                  isActive
-                    ? 'bg-navy-800 text-white'
-                    : 'text-navy-300 hover:bg-navy-900 hover:text-white'
+                `relative flex flex-col items-center justify-center gap-1 text-[11px] font-semibold tracking-wide ${
+                  isActive ? 'text-white' : 'text-fog hover:text-white'
                 }`
               }
             >
-              <Icon className="size-5" aria-hidden="true" />
-              {label}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span aria-hidden="true" className="absolute inset-x-6 top-0 h-0.5 bg-white" />
+                  )}
+                  <Icon className="size-5" aria-hidden="true" />
+                  {mobileLabel}
+                </>
+              )}
             </NavLink>
           ))}
-        </nav>
-        <div className="mt-auto border-t border-white/10 px-6 py-5 text-[13px] leading-6 text-navy-300">
-          <p>Routing: TomTom</p>
-          <p>Weather: Open-Meteo</p>
-          <p>Map: © OpenStreetMap</p>
-        </div>
-      </aside>
-
-      <div className="flex min-h-dvh flex-col pb-16 lg:pb-0 lg:pl-66" id="main" tabIndex={-1}>
-        <Outlet context={context} />
-      </div>
-
-      <nav
-        aria-label="Primary mobile"
-        className="fixed inset-x-0 bottom-0 z-30 grid h-16 grid-cols-4 border-t border-line bg-white lg:hidden"
-      >
-        {NAV.filter((item) => item.mobileLabel).map(({ to, mobileLabel, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 text-xs font-medium ${
-                isActive ? 'text-brand' : 'text-ink-subtle'
-              }`
-            }
-          >
-            <Icon className="size-5" aria-hidden="true" />
-            {mobileLabel}
-          </NavLink>
-        ))}
       </nav>
     </div>
+  )
+}
+
+function BarLink({ item, step }: { item: NavItem; step?: number }) {
+  return (
+    <NavLink
+      to={item.to}
+      className={({ isActive }) =>
+        `relative flex items-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors ${
+          isActive ? 'text-white' : 'text-fog hover:text-white'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {step !== undefined && (
+            <span
+              aria-hidden="true"
+              className={`font-mono text-[11px] ${isActive ? 'text-white/70' : 'text-fog/60'}`}
+            >
+              {String(step).padStart(2, '0')}
+            </span>
+          )}
+          {item.label}
+          {isActive && (
+            <span aria-hidden="true" className="absolute inset-x-3 bottom-0 h-[3px] bg-white" />
+          )}
+        </>
+      )}
+    </NavLink>
   )
 }

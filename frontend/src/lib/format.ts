@@ -92,3 +92,8 @@ export function formatLatLonCardinal(lat: number, lon: number): string {
   const ew = lon >= 0 ? 'E' : 'W'
   return `${Math.abs(lat).toFixed(2)}°${ns}, ${Math.abs(lon).toFixed(2)}°${ew}`
 }
+
+/** Checkpoint milepost: "725" for whole miles, "12.5" otherwise. */
+export function formatMilepost(mile: number): string {
+  return formatValue(mile, mile % 1 === 0 ? 0 : 1)
+}

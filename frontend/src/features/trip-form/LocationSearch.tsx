@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { CircleAlert, CircleX, LoaderCircle, MapPin, Search } from 'lucide-react'
+import { CircleAlert, CircleX, LoaderCircle } from 'lucide-react'
 import { ApiError, geocode } from '../../api/client'
 import type { GeocodeResult } from '../../api/types'
 import { formatCoordinate } from '../../lib/format'
@@ -39,6 +39,15 @@ function describeError(error: unknown, query: string): string {
     return error.message
   }
   return 'Location search failed. Try again.'
+}
+
+/** The map marker shape for each end of the trip: a ring for the origin, a square for the end. */
+export function EndpointGlyph({ tone }: { tone: 'origin' | 'destination' }) {
+  return tone === 'origin' ? (
+    <span aria-hidden="true" className="size-3 shrink-0 rounded-full border-[3px] border-ink" />
+  ) : (
+    <span aria-hidden="true" className="size-3 shrink-0 rounded-[2px] bg-ink" />
+  )
 }
 
 /**
@@ -138,23 +147,23 @@ export function LocationSearch({
     buttons[Math.min(buttons.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1))]?.focus()
   }
 
-  const pinClass = tone === 'destination' ? 'text-brand' : 'text-ink'
-
   if (value) {
     return (
       <div>
-        <p className="mb-1.5 text-sm font-semibold text-ink" id={`${id}-label`}>
+        <p className="field-label mb-1.5" id={`${id}-label`}>
           {label}
         </p>
         <div
-          className="flex items-center gap-3 rounded-[10px] border border-line bg-slate-50 px-3 py-2.5"
+          className="flex min-h-11 items-center gap-3 rounded-md border border-ink bg-surface py-2 pr-1.5 pl-3"
           aria-labelledby={`${id}-label`}
           role="group"
         >
-          <MapPin className={`size-4 shrink-0 ${pinClass}`} aria-hidden="true" />
+          <EndpointGlyph tone={tone} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-ink">{value.label}</p>
-            <p className="truncate text-xs text-ink-subtle tabular-nums">
+            <p className="truncate text-[15px] leading-snug font-semibold text-ink">
+              {value.label}
+            </p>
+            <p className="num truncate text-xs text-ink-3">
               {value.detail ? `${value.detail} · ` : ''}
               {formatCoordinate(value.lat, value.lon)}
             </p>
@@ -163,7 +172,7 @@ export function LocationSearch({
             type="button"
             onClick={change}
             disabled={disabled}
-            className="rounded-md px-2 py-1 text-sm font-semibold text-brand hover:bg-brand-soft disabled:text-ink-subtle"
+            className={buttonClass('ghost', 'sm', 'underline underline-offset-2')}
             aria-label={`Change ${label.toLowerCase()}`}
             id={inputId}
           >
@@ -186,15 +195,11 @@ export function LocationSearch({
 
   return (
     <div>
-      <label htmlFor={inputId} className="mb-1.5 block text-sm font-semibold text-ink">
+      <label htmlFor={inputId} className="field-label mb-1.5 block">
         {label}
       </label>
-      <div
-        className={`flex items-center gap-2 rounded-[10px] border bg-white py-1 pr-1 pl-3 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 ${
-          error || state.kind === 'error' ? 'border-red-400' : 'border-slate-300'
-        }`}
-      >
-        <Search className="size-4 shrink-0 text-ink-subtle" aria-hidden="true" />
+      <div className="field pr-1" data-invalid={Boolean(error) || state.kind === 'error'}>
+        <EndpointGlyph tone={tone} />
         <input
           ref={inputRef}
           id={inputId}
@@ -207,14 +212,14 @@ export function LocationSearch({
           disabled={disabled}
           aria-invalid={Boolean(error) || state.kind === 'error'}
           aria-describedby={describedBy || undefined}
-          className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-ink outline-none placeholder:text-ink-subtle"
+          className="min-w-0 flex-1 bg-transparent py-2 text-[15px] text-ink outline-none placeholder:text-ink-3"
         />
         <button
           type="button"
           onClick={() => void find()}
           disabled={disabled || state.kind === 'loading'}
           aria-label={`Find ${label.toLowerCase()}`}
-          className={buttonClass('secondary', 'sm')}
+          className={buttonClass('primary', 'sm')}
         >
           {state.kind === 'loading' ? (
             <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
@@ -224,14 +229,14 @@ export function LocationSearch({
       </div>
 
       {state.kind === 'loading' && (
-        <p className="mt-2 text-sm text-ink-muted" role="status">
+        <p className="mt-2 text-sm text-ink-2" role="status">
           Searching…
         </p>
       )}
       {state.kind === 'error' && (
         <p
           id={messageId}
-          className="mt-2 flex items-start gap-1.5 text-sm text-red-700"
+          className="mt-2 flex items-start gap-1.5 text-sm text-danger"
           role="alert"
         >
           <CircleX className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -239,52 +244,53 @@ export function LocationSearch({
         </p>
       )}
       {state.kind === 'results' && (
-        <>
+        <div className="mt-2 overflow-hidden rounded-md border border-line-strong bg-surface">
           <p
             id={messageId}
-            className="mt-2 flex items-start gap-1.5 text-sm text-amber-700"
+            className="flex items-start gap-1.5 border-b border-line bg-caution-soft px-3 py-2 text-[13px] font-medium text-caution"
             role="status"
           >
-            <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <CircleAlert className="mt-px size-4 shrink-0" aria-hidden="true" />
             {results.length === 1
               ? '1 place matches. Select it to continue.'
               : `${results.length} places match. Select one to continue.`}
           </p>
-          <div className="mt-2 rounded-xl border border-line bg-white p-1.5 shadow-sm">
-            <ul
-              ref={listRef}
-              aria-label={`Matching places for ${label.toLowerCase()}`}
-              onKeyDown={onListKeyDown}
+          <ul
+            ref={listRef}
+            aria-label={`Matching places for ${label.toLowerCase()}`}
+            onKeyDown={onListKeyDown}
+            className="divide-y divide-line"
+          >
+            {visible.map((place) => (
+              <li key={`${place.label}-${place.lat}-${place.lon}`}>
+                <button
+                  type="button"
+                  onClick={() => select(place)}
+                  className="flex w-full items-baseline gap-3 px-3 py-2.5 text-left hover:bg-paper focus-visible:bg-paper focus-visible:outline-offset-[-2px]"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-ink">{place.label}</span>
+                    {place.detail && (
+                      <span className="block text-xs text-ink-3">{place.detail}</span>
+                    )}
+                  </span>
+                  <span className="num shrink-0 text-[11px] text-ink-3">
+                    {formatCoordinate(place.lat, place.lon, 2)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {!showAll && results.length > VISIBLE_RESULTS && (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="w-full border-t border-line px-3 py-2 text-left text-[13px] font-semibold text-ink underline underline-offset-2 hover:bg-paper"
             >
-              {visible.map((place) => (
-                <li key={`${place.label}-${place.lat}-${place.lon}`}>
-                  <button
-                    type="button"
-                    onClick={() => select(place)}
-                    className="flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left hover:bg-brand-soft focus-visible:bg-brand-soft"
-                  >
-                    <MapPin className="mt-0.5 size-4 shrink-0 text-ink-subtle" aria-hidden="true" />
-                    <span>
-                      <span className="block text-sm font-semibold text-ink">{place.label}</span>
-                      {place.detail && (
-                        <span className="block text-xs text-ink-subtle">{place.detail}</span>
-                      )}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {!showAll && results.length > VISIBLE_RESULTS && (
-              <button
-                type="button"
-                onClick={() => setShowAll(true)}
-                className="ml-10 py-1.5 text-sm font-semibold text-brand hover:underline"
-              >
-                Show {results.length - VISIBLE_RESULTS} more
-              </button>
-            )}
-          </div>
-        </>
+              Show {results.length - VISIBLE_RESULTS} more
+            </button>
+          )}
+        </div>
       )}
       {error && <FieldError id={errorId} message={error} />}
     </div>
@@ -293,7 +299,7 @@ export function LocationSearch({
 
 export function FieldError({ id, message }: { id: string; message: string }) {
   return (
-    <p id={id} className="mt-1.5 flex items-start gap-1.5 text-sm text-red-700">
+    <p id={id} className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-danger">
       <CircleX className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       {message}
     </p>

@@ -6,12 +6,12 @@ interface ApiStatusProps {
 }
 
 const STYLES: Record<ApiHealth['state'], { dot: string; label: string }> = {
-  checking: { dot: 'bg-slate-400 motion-safe:animate-pulse', label: 'checking…' },
-  online: { dot: 'bg-emerald-500', label: 'ok' },
-  offline: { dot: 'bg-red-500', label: 'unreachable' },
+  checking: { dot: 'bg-fog motion-safe:animate-pulse', label: 'checking…' },
+  online: { dot: 'bg-[#3f9f62]', label: 'ok' },
+  offline: { dot: 'bg-[#e5533f]', label: 'unreachable' },
 }
 
-/** Compact backend connection indicator. The state is always given as text, not colour alone. */
+/** Backend connection readout for the dark app bar. The state is always text, not colour alone. */
 export function ApiStatus({ health, onRetry }: ApiStatusProps) {
   const style = STYLES[health.state]
 
@@ -20,19 +20,19 @@ export function ApiStatus({ health, onRetry }: ApiStatusProps) {
       <p
         role="status"
         aria-live="polite"
-        className="flex items-center gap-2 rounded-full whitespace-nowrap border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700"
+        className="flex items-center gap-2 rounded-md border border-asphalt-3 bg-asphalt-2 px-2.5 py-1 text-xs whitespace-nowrap text-fog"
       >
-        <span aria-hidden="true" className={`size-2 rounded-full ${style.dot}`} />
-        <span>API: {style.label}</span>
+        <span aria-hidden="true" className={`size-1.5 rounded-full ${style.dot}`} />
+        <span className="font-mono">API: {style.label}</span>
         {health.state === 'online' && (
-          <span className="hidden text-slate-400 sm:inline">v{health.version}</span>
+          <span className="hidden font-mono text-fog/75 sm:inline">v{health.version}</span>
         )}
       </p>
       {health.state === 'offline' && (
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+          className="h-7 rounded-md bg-white px-2.5 text-xs font-semibold text-ink hover:bg-paper"
         >
           Retry
         </button>

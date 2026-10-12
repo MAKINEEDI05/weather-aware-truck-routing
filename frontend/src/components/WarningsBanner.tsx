@@ -16,6 +16,7 @@ interface WarningsBannerProps {
   exclude?: string[]
 }
 
+/** Backend warnings as margin notes: a rule on the left, the title in bold, the message verbatim. */
 export function WarningsBanner({
   warnings,
   exclude = ['CORRIDOR_COARSENED'],
@@ -33,13 +34,14 @@ export function WarningsBanner({
         return (
           <li
             key={warning.code}
-            className={`flex gap-3 rounded-xl border p-3 text-sm ${
-              weather
-                ? 'border-amber-200 bg-amber-50 text-amber-900'
-                : 'border-blue-200 bg-brand-soft text-blue-900'
+            className={`flex gap-2.5 rounded-r-md border-l-[3px] px-3 py-2.5 text-sm text-ink ${
+              weather ? 'border-l-[#e2b024] bg-caution-soft' : 'border-l-ink bg-paper-2'
             }`}
           >
-            <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <Icon
+              className={`mt-0.5 size-4 shrink-0 ${weather ? 'text-caution' : 'text-ink-2'}`}
+              aria-hidden="true"
+            />
             <p>
               <strong className="font-semibold">{TITLES[warning.code] ?? 'Note.'}</strong>{' '}
               {warning.message}

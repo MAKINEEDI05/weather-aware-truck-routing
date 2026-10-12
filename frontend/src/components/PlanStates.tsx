@@ -16,10 +16,10 @@ import { StateView } from './StateViews'
 /** Pages that need a plan show this when there is none (design 08 "Empty"). */
 export function NoTripState() {
   return (
-    <div className="p-4 lg:p-6">
+    <div className="mx-auto w-full max-w-[1440px] p-4 lg:p-8">
       <StateView
         icon={Route}
-        tone="brand"
+        tone="neutral"
         dashed
         title="No trip planned yet"
         actions={
@@ -28,7 +28,8 @@ export function NoTripState() {
           </Link>
         }
       >
-        Enter an origin, destination, departure time and load weight to compare routes.
+        Enter an origin, destination, departure time and load weight. Routes, the recommendation and
+        the weather heatmap appear here once the trip is planned.
       </StateView>
     </div>
   )

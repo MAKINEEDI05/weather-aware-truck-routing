@@ -1,17 +1,18 @@
 import type { PlanResponse, Route } from '../api/types'
 
-// DEC-30: route identity colours never reuse a risk colour.
+// Route identity: deep, cool and desaturated so route lines recede behind the risk colours. None of
+// them is close to a risk hue. Identity is always carried by the route letter as well.
 const ROUTE_COLORS: Record<string, string> = {
-  A: '#2563eb',
-  B: '#334155',
-  C: '#0891b2',
-  D: '#7c3aed',
-  E: '#0f766e',
-  F: '#be185d',
+  A: '#3557c2',
+  B: '#1f7f8f',
+  C: '#23262b',
+  D: '#5f7fa8',
+  E: '#4b5563',
+  F: '#2c5f8a',
 }
 
 export function routeColor(routeId: string): string {
-  return ROUTE_COLORS[routeId] ?? '#475569'
+  return ROUTE_COLORS[routeId] ?? '#4b5563'
 }
 
 export function routesByRank(result: PlanResponse): Route[] {

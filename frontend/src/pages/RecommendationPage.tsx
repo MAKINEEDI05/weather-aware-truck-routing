@@ -1,18 +1,18 @@
-import { useNavigate } from 'react-router'
-import { CircleCheck, CloudOff, RefreshCw, TriangleAlert } from 'lucide-react'
+import { Link, useNavigate } from 'react-router'
+import { CircleCheck, CloudOff, OctagonX, RefreshCw } from 'lucide-react'
 import type { PlanResponse, Route } from '../api/types'
+import { PageHeader } from '../components/PageHeader'
 import { NoTripState } from '../components/PlanStates'
 import { RankingList } from '../components/RulesContent'
 import { RiskDot } from '../components/RiskBadge'
-import { RiskMilesBar } from '../components/RiskMilesBar'
-import { TopBar } from '../components/TopBar'
+import { RouteProfile } from '../components/RouteProfile'
+import { RouteShield } from '../components/RouteShield'
 import { WarningsBanner } from '../components/WarningsBanner'
 import { ComparisonTable } from '../features/recommendation/ComparisonTable'
 import { DecisionTrace } from '../features/recommendation/DecisionTrace'
 import { CRITERIA, decidedIndex, runnerUp, whyNotText } from '../features/recommendation/criteria'
-import { RouteSwatch } from '../features/routes/RouteCard'
 import { formatDayTimeZone, formatDuration, formatMiles } from '../lib/format'
-import { RISK } from '../lib/risk'
+import { RISK, RISK_ORDER } from '../lib/risk'
 import { findRoute, routesByRank } from '../lib/routes'
 import { buttonClass } from '../lib/ui'
 import { useTrip } from '../state/TripContext'
@@ -21,7 +21,16 @@ export function RecommendationPage() {
   const { result } = useTrip()
   return (
     <>
-      <TopBar title="Recommendation" showTrip={Boolean(result)} />
+      <PageHeader
+        title="Recommendation"
+        kicker="Step 3 · Decision"
+        description={
+          result
+            ? 'Which route to take, the rule that decided it, and why each other route was not chosen.'
+            : undefined
+        }
+        trip={Boolean(result)}
+      />
       {result ? <Recommendation result={result} /> : <NoTripState />}
     </>
   )
@@ -30,9 +39,9 @@ export function RecommendationPage() {
 function Recommendation({ result }: { result: PlanResponse }) {
   const { recommendation } = result
   return (
-    <div className="space-y-4 p-4 lg:space-y-6 lg:p-6">
+    <div className="mx-auto w-full max-w-[1440px] space-y-5 p-4 lg:space-y-6 lg:p-8">
       <WarningsBanner warnings={result.warnings} />
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         {recommendation.status === 'RECOMMENDED' ? (
           <RecommendedCard result={result} />
         ) : recommendation.status === 'NO_ELIGIBLE_ROUTE' ? (
@@ -40,17 +49,17 @@ function Recommendation({ result }: { result: PlanResponse }) {
         ) : (
           <NoWeatherCard result={result} />
         )}
-        <aside className="card p-5" aria-labelledby="ranked-title">
-          <h2 id="ranked-title" className="text-base font-semibold text-ink">
+        <aside className="panel self-start p-5" aria-labelledby="ranked-title">
+          <h2 id="ranked-title" className="text-base font-bold">
             How routes are ranked
           </h2>
-          <p className="mt-1 text-sm text-ink-muted">
+          <p className="mt-0.5 text-[13px] text-ink-3">
             Assessment priority, compared in this exact order
           </p>
           <div className="mt-2">
             <RankingList />
           </div>
-          <p className="mt-3 rounded-xl border border-fuchsia-200 bg-fuchsia-50 p-3 text-sm text-fuchsia-900">
+          <p className="mt-3 rounded-md border-l-[3px] border-l-closed bg-closed-soft px-3 py-2.5 text-[13px] text-ink">
             <strong className="font-semibold">App policy:</strong> a route with any No Travel miles
             keeps its rank but is not recommended.
           </p>
@@ -59,9 +68,13 @@ function Recommendation({ result }: { result: PlanResponse }) {
 
       <ComparisonTable result={result} />
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-        <MilesByRisk result={result} />
-        {recommendation.status === 'RECOMMENDED' && <WhyNotCards result={result} />}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <RiskAlongRoutes result={result} />
+        {recommendation.status === 'RECOMMENDED' && (
+          <div className="space-y-5 lg:space-y-6">
+            <WhyNotCards result={result} />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -74,36 +87,39 @@ function RecommendedCard({ result }: { result: PlanResponse }) {
   const other = runner ? findRoute(result, runner.other_route) : undefined
 
   return (
-    <section
-      className="card border-2 !border-green-300 p-5 lg:p-6"
-      aria-labelledby="recommended-title"
-    >
-      <div className="flex flex-wrap items-start gap-4">
-        <span className="flex size-12 items-center justify-center rounded-xl bg-green-50 text-green-600">
-          <CircleCheck className="size-6" aria-hidden="true" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="eyebrow !text-green-700">Recommended route</p>
-          <h2
-            id="recommended-title"
-            className="mt-0.5 flex items-center gap-3 text-2xl font-bold tracking-tight text-ink"
-          >
-            <RouteSwatch routeId={route.id} className="h-1.5 w-8" />
-            {route.label}
-          </h2>
+    <section className="panel overflow-hidden" aria-labelledby="recommended-title">
+      <div className="on-dark bg-ink px-5 py-5 text-white lg:px-6">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] text-[#9fdcb4] uppercase">
+              <CircleCheck className="size-4" aria-hidden="true" />
+              Recommended route
+            </p>
+            <h2
+              id="recommended-title"
+              className="mt-2 flex items-center gap-3 text-3xl leading-none font-bold tracking-tight"
+            >
+              <RouteShield routeId={route.id} size="lg" />
+              {route.label}
+            </h2>
+          </div>
+          <dl className="grid w-full grid-cols-3 gap-4 sm:w-auto sm:gap-8">
+            <Figure label="Distance" value={formatMiles(route.distance_mi)} />
+            <Figure label="Travel time" value={formatDuration(route.travel_time_s)} />
+            <Figure label="Arrival" value={formatDayTimeZone(route.arrival_time)} />
+          </dl>
         </div>
-        <dl className="grid w-full grid-cols-3 gap-4 sm:w-auto sm:gap-6 sm:text-right">
-          <Figure label="Distance" value={formatMiles(route.distance_mi)} />
-          <Figure label="Travel time" value={formatDuration(route.travel_time_s)} />
-          <Figure label="Arrival" value={formatDayTimeZone(route.arrival_time)} />
-        </dl>
       </div>
-      <p className="mt-4 text-[15px] leading-relaxed text-ink">{recommendation.explanation}</p>
-      {runner && other && (
-        <div className="mt-5">
-          <DecisionTrace recommended={route} other={other} comparison={runner} />
-        </div>
-      )}
+      <div className="p-5 lg:p-6">
+        <p className="max-w-3xl text-[15px] leading-relaxed text-ink">
+          {recommendation.explanation}
+        </p>
+        {runner && other && (
+          <div className="mt-5 border-t border-line pt-4">
+            <DecisionTrace recommended={route} other={other} comparison={runner} />
+          </div>
+        )}
+      </div>
     </section>
   )
 }
@@ -111,46 +127,48 @@ function RecommendedCard({ result }: { result: PlanResponse }) {
 function NoEligibleCard({ result }: { result: PlanResponse }) {
   const navigate = useNavigate()
   return (
-    <section
-      className="card border-2 !border-fuchsia-300 p-5 lg:p-6"
-      aria-labelledby="blocked-title"
-      role="alert"
-    >
-      <div className="flex items-start gap-4">
-        <span className="flex size-12 items-center justify-center rounded-xl bg-fuchsia-50 text-fuchsia-700">
-          <TriangleAlert className="size-6" aria-hidden="true" />
-        </span>
-        <div>
-          <p className="eyebrow !text-fuchsia-700">No eligible route</p>
-          <h2 id="blocked-title" className="mt-0.5 text-xl font-bold text-ink">
-            No route can be recommended
-          </h2>
-          <p className="mt-2 text-[15px] leading-relaxed text-ink">
-            {result.recommendation.explanation}
+    <section className="panel overflow-hidden" aria-labelledby="blocked-title" role="alert">
+      <div aria-hidden="true" className="hatch-closed h-2 bg-closed" />
+      <div className="bg-closed px-5 py-5 text-white lg:px-6">
+        <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] uppercase">
+          <OctagonX className="size-4" aria-hidden="true" />
+          No eligible route
+        </p>
+        <h2 id="blocked-title" className="mt-2 text-2xl leading-tight font-bold tracking-tight">
+          No route can be recommended
+        </h2>
+      </div>
+      <div className="p-5 lg:p-6">
+        <p className="max-w-3xl text-[15px] leading-relaxed text-ink">
+          {result.recommendation.explanation}
+        </p>
+        <ul className="mt-5 grid gap-2 sm:grid-cols-3">
+          {result.recommendation.ineligible.map((item) => (
+            <li
+              key={item.route}
+              className="flex items-center gap-2 rounded-md border border-line px-3 py-2.5"
+            >
+              <RouteShield routeId={item.route} size="sm" />
+              <span className="font-semibold text-ink">Route {item.route}</span>
+              <span className="num ml-auto text-[13px] font-semibold text-closed">
+                {item.no_travel_mi.toFixed(1)} mi No Travel
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/plan', { state: { focus: 'departure' } })}
+            className={buttonClass('primary', 'lg')}
+          >
+            Try a later departure
+          </button>
+          <p className="text-[13px] text-ink-3">
+            Conditions change by the hour — the heatmap shows when the corridor clears.
           </p>
         </div>
       </div>
-      <ul className="mt-5 grid gap-2 sm:grid-cols-3">
-        {result.recommendation.ineligible.map((item) => (
-          <li
-            key={item.route}
-            className="flex items-center gap-2 rounded-xl border border-line px-3 py-2.5"
-          >
-            <RouteSwatch routeId={item.route} className="h-1 w-5" />
-            <span className="font-semibold text-ink">Route {item.route}</span>
-            <span className="ml-auto text-sm font-semibold text-fuchsia-700 tabular-nums">
-              {item.no_travel_mi.toFixed(1)} mi No Travel
-            </span>
-          </li>
-        ))}
-      </ul>
-      <button
-        type="button"
-        onClick={() => navigate('/plan', { state: { focus: 'departure' } })}
-        className={buttonClass('primary', 'lg', 'mt-5 w-full sm:w-auto')}
-      >
-        Try a later departure
-      </button>
     </section>
   )
 }
@@ -158,67 +176,73 @@ function NoEligibleCard({ result }: { result: PlanResponse }) {
 function NoWeatherCard({ result }: { result: PlanResponse }) {
   const { retryPlan, status } = useTrip()
   return (
-    <section
-      className="card border-2 !border-amber-300 p-5 lg:p-6"
-      aria-labelledby="noweather-title"
-      role="alert"
-    >
-      <div className="flex items-start gap-4">
-        <span className="flex size-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-          <CloudOff className="size-6" aria-hidden="true" />
-        </span>
-        <div>
-          <p className="eyebrow !text-amber-700">Weather unavailable</p>
-          <h2 id="noweather-title" className="mt-0.5 text-xl font-bold text-ink">
-            No recommendation without forecasts
-          </h2>
-          <p className="mt-2 text-[15px] leading-relaxed text-ink">
-            {result.recommendation.explanation}
-          </p>
-        </div>
+    <section className="panel overflow-hidden" aria-labelledby="noweather-title" role="alert">
+      <div aria-hidden="true" className="hatch-unknown h-2 bg-[#8b9099]" />
+      <div className="bg-[#4b4f57] px-5 py-5 text-white lg:px-6">
+        <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] uppercase">
+          <CloudOff className="size-4" aria-hidden="true" />
+          Weather unavailable
+        </p>
+        <h2 id="noweather-title" className="mt-2 text-2xl leading-tight font-bold tracking-tight">
+          No recommendation without forecasts
+        </h2>
       </div>
-      <button
-        type="button"
-        onClick={() => void retryPlan()}
-        disabled={status === 'loading'}
-        className={buttonClass('secondary', 'lg', 'mt-5')}
-      >
-        <RefreshCw
-          className={`size-4 ${status === 'loading' ? 'animate-spin' : ''}`}
-          aria-hidden="true"
-        />
-        Retry weather
-      </button>
+      <div className="p-5 lg:p-6">
+        <p className="max-w-3xl text-[15px] leading-relaxed text-ink">
+          {result.recommendation.explanation}
+        </p>
+        <button
+          type="button"
+          onClick={() => void retryPlan()}
+          disabled={status === 'loading'}
+          className={buttonClass('primary', 'lg', 'mt-5')}
+        >
+          <RefreshCw
+            className={`size-4 ${status === 'loading' ? 'animate-spin' : ''}`}
+            aria-hidden="true"
+          />
+          Retry weather
+        </button>
+      </div>
     </section>
   )
 }
 
-function MilesByRisk({ result }: { result: PlanResponse }) {
+/** Every route's risk profile on one mile scale, so lengths and risk positions compare directly. */
+function RiskAlongRoutes({ result }: { result: PlanResponse }) {
+  const longest = Math.max(...result.routes.map((route) => route.distance_mi), 1)
   return (
-    <section className="card p-5" aria-labelledby="miles-title">
-      <h2 id="miles-title" className="text-base font-semibold text-ink">
-        Miles by risk level
+    <section className="panel self-start p-5" aria-labelledby="along-title">
+      <h2 id="along-title" className="text-base font-bold">
+        Risk along each route, to scale
       </h2>
-      <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted" aria-hidden="true">
-        {(['LOW', 'MODERATE', 'HIGH', 'SEVERE', 'NO_TRAVEL', 'UNKNOWN'] as const).map((level) => (
-          <li key={level} className="flex items-center gap-1.5">
-            <RiskDot level={level} className="size-2.5 rounded-sm" />
-            {RISK[level].label}
+      <p className="mt-0.5 text-[13px] text-ink-3">
+        Origin on the left. Bar length is route length; colour is each checkpoint's level at its
+        ETA.
+      </p>
+      <ul className="mt-4 space-y-4">
+        {routesByRank(result).map((route) => (
+          <li key={route.id}>
+            <div className="mb-1.5 flex items-baseline gap-2 text-sm">
+              <RouteShield routeId={route.id} size="sm" />
+              <span className="font-semibold text-ink">{route.label}</span>
+              <span className="num text-xs text-ink-3">#{route.rank}</span>
+              <span className="num ml-auto text-[13px] text-ink-2">
+                {formatMiles(route.distance_mi)}
+              </span>
+            </div>
+            <RouteProfile route={route} className="h-3.5" scale={route.distance_mi / longest} />
           </li>
         ))}
       </ul>
-      <ul className="mt-4 space-y-3">
-        {routesByRank(result).map((route) => (
-          <li
-            key={route.id}
-            className="grid grid-cols-[88px_minmax(0,1fr)_auto] items-center gap-3 text-sm"
-          >
-            <span className="flex items-center gap-2 font-semibold text-ink">
-              <RouteSwatch routeId={route.id} className="h-1 w-4" />
-              {route.label}
-            </span>
-            <RiskMilesBar metrics={route.metrics} distance={route.distance_mi} className="h-3" />
-            <span className="text-ink-muted tabular-nums">{formatMiles(route.distance_mi)}</span>
+      <ul
+        className="mt-4 flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-3 text-xs text-ink-2"
+        aria-hidden="true"
+      >
+        {RISK_ORDER.map((level) => (
+          <li key={level} className="flex items-center gap-1.5">
+            <RiskDot level={level} />
+            {RISK[level].label}
           </li>
         ))}
       </ul>
@@ -236,6 +260,7 @@ function WhyNotCards({ result }: { result: PlanResponse }) {
         const index = decidedIndex(comparison)
         const above = comparison.other_rank < recommended.rank
         const criterion = CRITERIA[index]
+        const blocked = above || !other.eligible
         const heading = above
           ? 'Not eligible — No Travel conditions'
           : criterion
@@ -244,24 +269,31 @@ function WhyNotCards({ result }: { result: PlanResponse }) {
         return (
           <section
             key={comparison.other_route}
-            className="card p-5"
+            className="panel p-5"
             aria-labelledby={`why-${other.id}`}
           >
-            <h2
-              id={`why-${other.id}`}
-              className="flex items-center gap-2 text-base font-semibold text-ink"
-            >
-              <RouteSwatch routeId={other.id} className="h-1 w-5" />
-              Why not {other.label}?
-            </h2>
-            <p
-              className={`mt-1 text-sm font-semibold ${above || !other.eligible ? 'text-fuchsia-700' : 'text-orange-700'}`}
-            >
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <h2
+                id={`why-${other.id}`}
+                className="flex items-center gap-2 text-base font-bold text-ink"
+              >
+                <RouteShield routeId={other.id} size="sm" />
+                Why not {other.label}?
+              </h2>
+              <GateMarks decided={above ? -1 : index} blocked={blocked} />
+            </div>
+            <p className={`mt-2 text-[13px] font-semibold ${blocked ? 'text-closed' : 'text-ink'}`}>
               {heading}
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-2">
               {whyNotText(recommended, other, comparison)}
             </p>
+            <Link
+              to={`/routes/${other.id}`}
+              className="mt-3 inline-block text-[13px] font-semibold text-ink underline underline-offset-2"
+            >
+              Inspect {other.label}
+            </Link>
           </section>
         )
       })}
@@ -269,13 +301,38 @@ function WhyNotCards({ result }: { result: PlanResponse }) {
   )
 }
 
+/** Four small gates, the deciding one filled: where on the ladder this route was decided. */
+function GateMarks({ decided, blocked }: { decided: number; blocked: boolean }) {
+  return (
+    <span aria-hidden="true" className="ml-auto flex items-center gap-1">
+      {CRITERIA.map((criterion, index) => (
+        <span
+          key={criterion.key}
+          className={`num flex size-5 items-center justify-center rounded-[4px] border text-[10px] font-semibold ${
+            index === decided
+              ? 'border-ink bg-ink text-white'
+              : index < decided
+                ? 'border-line-strong bg-paper text-ink-2'
+                : 'border-dashed border-line-strong text-ink-3'
+          }`}
+        >
+          {criterion.priority}
+        </span>
+      ))}
+      {blocked && (
+        <span className="ml-1 flex h-5 items-center rounded-[4px] bg-closed px-1.5 font-mono text-[10px] font-semibold text-white">
+          NT
+        </span>
+      )}
+    </span>
+  )
+}
+
 function Figure({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs text-ink-subtle">{label}</dt>
-      <dd className="mt-0.5 text-base font-semibold text-ink tabular-nums sm:text-lg sm:whitespace-nowrap">
-        {value}
-      </dd>
+      <dt className="font-mono text-[10px] tracking-[0.12em] text-white/60 uppercase">{label}</dt>
+      <dd className="num mt-1 text-base font-semibold sm:text-lg sm:whitespace-nowrap">{value}</dd>
     </div>
   )
 }

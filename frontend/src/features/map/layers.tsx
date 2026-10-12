@@ -8,6 +8,8 @@ import { NO_TRAVEL_OUTLINE, RISK } from '../../lib/risk'
 import { routeColor } from '../../lib/routes'
 import { CheckpointPopup, RouteSummaryPopup } from './popups'
 
+const INK = '#15171b'
+
 // ---------------------------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------------------------
@@ -20,6 +22,7 @@ interface RouteLayerProps {
   emphasizeSelected?: boolean
 }
 
+/** Route lines plus a lettered shield on each line, so routes are named on the map itself. */
 export function RouteLayer({
   routes,
   selectedId,
@@ -30,6 +33,15 @@ export function RouteLayer({
     <>
       {routes.map((route) => (
         <RoutePolyline
+          key={route.id}
+          route={route}
+          selected={route.id === selectedId}
+          faded={emphasizeSelected && route.id !== selectedId}
+          onSelect={onSelect}
+        />
+      ))}
+      {routes.map((route) => (
+        <RouteShieldMarker
           key={route.id}
           route={route}
           selected={route.id === selectedId}
@@ -51,8 +63,8 @@ interface RoutePolylineProps {
 function RoutePolyline({ route, selected, faded, onSelect }: RoutePolylineProps) {
   const lineRef = useRef<LeafletPolyline>(null)
   const casingRef = useRef<LeafletPolyline>(null)
-  const weight = selected ? 6 : route.is_recommended ? 5 : 4
-  const opacity = faded ? 0.35 : selected || route.is_recommended ? 1 : 0.75
+  const weight = selected ? 6 : route.is_recommended ? 4.5 : 4
+  const opacity = faded ? 0.3 : selected ? 1 : 0.72
 
   useEffect(() => {
     if (selected) {
@@ -67,12 +79,19 @@ function RoutePolyline({ route, selected, faded, onSelect }: RoutePolylineProps)
         ref={casingRef}
         positions={route.geometry}
         interactive={false}
-        pathOptions={{ color: '#ffffff', weight: weight + 4, opacity: faded ? 0.4 : 0.9 }}
+        pathOptions={{ color: '#ffffff', weight: weight + 4, opacity: faded ? 0.35 : 0.95 }}
       />
       <Polyline
         ref={lineRef}
         positions={route.geometry}
-        pathOptions={{ color: routeColor(route.id), weight, opacity, lineCap: 'round' }}
+        pathOptions={{
+          color: routeColor(route.id),
+          weight,
+          opacity,
+          lineCap: 'round',
+          lineJoin: 'round',
+          bubblingMouseEvents: false,
+        }}
         eventHandlers={{ click: () => onSelect?.(route.id) }}
       >
         <Popup>
@@ -80,6 +99,54 @@ function RoutePolyline({ route, selected, faded, onSelect }: RoutePolylineProps)
         </Popup>
       </Polyline>
     </>
+  )
+}
+
+// Shields sit at different fractions of each line so overlapping routes do not stack them.
+const SHIELD_POSITION = [0.5, 0.32, 0.68, 0.2, 0.8]
+
+function shieldPosition(route: Route): [number, number] | null {
+  const { geometry } = route
+  if (!geometry.length) return null
+  const fraction = SHIELD_POSITION[route.rank - 1] ?? 0.4
+  return geometry[Math.round(fraction * (geometry.length - 1))] ?? null
+}
+
+function RouteShieldMarker({ route, selected, faded, onSelect }: RoutePolylineProps) {
+  const position = shieldPosition(route)
+  const icon = useMemo(() => {
+    const size = selected ? 28 : 24
+    const letter = route.id.replace(/[^A-Za-z0-9]/g, '')
+    return L.divIcon({
+      className: '',
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      html:
+        `<div class="map-shield${selected ? ' map-shield--selected' : ''}" ` +
+        `style="width:${size}px;height:${size}px;font-size:${selected ? 14 : 12}px;` +
+        `background:${routeColor(route.id)};opacity:${faded ? 0.55 : 1}">${letter}</div>`,
+    })
+  }, [route.id, selected, faded])
+
+  if (!position) return null
+  return (
+    <Marker
+      position={position}
+      icon={icon}
+      title={`${route.label}, rank ${route.rank}`}
+      zIndexOffset={selected ? 1000 : 0}
+      eventHandlers={{
+        click: () => onSelect?.(route.id),
+        // Leaflet makes the shield a focusable role=button but only maps Enter to popups.
+        keydown: (event) => {
+          const key = (event.originalEvent as KeyboardEvent).key
+          if (key === 'Enter' || key === ' ') {
+            event.originalEvent.preventDefault()
+            onSelect?.(route.id)
+          }
+        },
+      }}
+    />
   )
 }
 
@@ -94,6 +161,12 @@ interface CheckpointLayerProps {
   radius?: number
   /** Open the popup when a checkpoint is selected from outside the map (e.g. the table). */
   openSelected?: boolean
+  /** Attach popups to markers. Off where an in-page inspector shows the details instead. */
+  popups?: boolean
+  /** Keep the selected marker in view when it is selected from outside the map. */
+  panToSelected?: boolean
+  /** Draw lighter (checkpoints of a route that is not selected). */
+  muted?: boolean
 }
 
 export function CheckpointLayer({
@@ -102,6 +175,9 @@ export function CheckpointLayer({
   onSelect,
   radius = 5,
   openSelected = false,
+  popups = true,
+  panToSelected = false,
+  muted = false,
 }: CheckpointLayerProps) {
   return (
     <>
@@ -113,6 +189,9 @@ export function CheckpointLayer({
           radius={radius}
           selected={checkpoint.index === selectedIndex}
           openSelected={openSelected}
+          popups={popups}
+          panToSelected={panToSelected}
+          muted={muted}
           onSelect={onSelect}
         />
       ))}
@@ -126,10 +205,13 @@ interface CheckpointMarkerProps {
   radius: number
   selected: boolean
   openSelected: boolean
+  popups: boolean
+  panToSelected: boolean
+  muted: boolean
   onSelect?: (index: number) => void
 }
 
-function markerStyle(checkpoint: Checkpoint, selected: boolean) {
+function markerStyle(checkpoint: Checkpoint, selected: boolean, muted: boolean) {
   const level = checkpoint.risk.overall
   const base =
     level === 'UNKNOWN'
@@ -137,7 +219,8 @@ function markerStyle(checkpoint: Checkpoint, selected: boolean) {
       : level === 'NO_TRAVEL'
         ? { color: NO_TRAVEL_OUTLINE, weight: 2.5, fillColor: RISK.NO_TRAVEL.color, fillOpacity: 1 }
         : { color: '#ffffff', weight: 1.5, fillColor: RISK[level].color, fillOpacity: 1 }
-  return selected ? { ...base, color: '#0f172a', weight: 3 } : base
+  if (selected) return { ...base, color: INK, weight: 3, opacity: 1 }
+  return muted ? { ...base, opacity: 0.7, fillOpacity: base.fillOpacity * 0.7 } : base
 }
 
 function CheckpointMarker({
@@ -146,46 +229,59 @@ function CheckpointMarker({
   radius,
   selected,
   openSelected,
+  popups,
+  panToSelected,
+  muted,
   onSelect,
 }: CheckpointMarkerProps) {
   const ref = useRef<LeafletCircleMarker>(null)
+  const map = useMap()
 
   useEffect(() => {
-    if (selected) {
-      ref.current?.bringToFront()
-      if (openSelected) {
-        ref.current?.openPopup()
-      }
+    if (!selected) return
+    ref.current?.bringToFront()
+    if (openSelected) {
+      ref.current?.openPopup()
     }
-  }, [selected, openSelected])
+    if (panToSelected) {
+      map.panInside([checkpoint.lat, checkpoint.lon], { padding: [48, 48] })
+    }
+  }, [selected, openSelected, panToSelected, map, checkpoint.lat, checkpoint.lon])
 
   return (
     <CircleMarker
       ref={ref}
       center={[checkpoint.lat, checkpoint.lon]}
-      radius={selected ? radius + 3 : radius}
-      pathOptions={markerStyle(checkpoint, selected)}
+      radius={selected ? radius + 3 : checkpoint.risk.overall === 'NO_TRAVEL' ? radius + 1 : radius}
+      pathOptions={markerStyle(checkpoint, selected, muted)}
+      bubblingMouseEvents={false}
       eventHandlers={{ click: () => onSelect?.(checkpoint.index) }}
     >
-      <Popup>
-        <CheckpointPopup route={route} checkpoint={checkpoint} />
-      </Popup>
+      {popups && (
+        <Popup>
+          <CheckpointPopup route={route} checkpoint={checkpoint} />
+        </Popup>
+      )}
     </CircleMarker>
   )
 }
 
 // ---------------------------------------------------------------------------------------------
-// Origin and destination
+// Origin and destination: a ring for the start, a square terminal for the end
 // ---------------------------------------------------------------------------------------------
+
+const ORIGIN_ICON = L.divIcon({
+  className: '',
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+  html: '<div class="map-endpoint map-endpoint--origin"></div>',
+})
 
 const DESTINATION_ICON = L.divIcon({
   className: '',
-  iconSize: [28, 36],
-  iconAnchor: [14, 34],
-  html:
-    '<svg width="28" height="36" viewBox="0 0 28 36" aria-hidden="true">' +
-    '<path d="M14 1C7 1 1.5 6.4 1.5 13.3 1.5 22.5 14 35 14 35s12.5-12.5 12.5-21.7C26.5 6.4 21 1 14 1z" ' +
-    'fill="#2563eb" stroke="#ffffff" stroke-width="2"/><circle cx="14" cy="13" r="4.5" fill="#ffffff"/></svg>',
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+  html: '<div class="map-endpoint map-endpoint--destination"></div>',
 })
 
 export function EndpointMarkers({
@@ -198,34 +294,39 @@ export function EndpointMarkers({
   return (
     <>
       {origin && (
-        <CircleMarker
-          center={[origin.lat, origin.lon]}
-          radius={8}
-          pathOptions={{ color: '#0f172a', weight: 4, fillColor: '#ffffff', fillOpacity: 1 }}
+        <Marker
+          position={[origin.lat, origin.lon]}
+          icon={ORIGIN_ICON}
+          title={`Origin: ${origin.label}`}
+          zIndexOffset={2000}
         >
           <Popup>
-            <div className="px-4 py-3 text-sm">
-              <p className="eyebrow">Origin</p>
-              <p className="font-semibold text-ink">{origin.label}</p>
-            </div>
+            <EndpointPopup kind="Origin" place={origin} />
           </Popup>
-        </CircleMarker>
+        </Marker>
       )}
       {destination && (
         <Marker
           position={[destination.lat, destination.lon]}
           icon={DESTINATION_ICON}
-          title="Destination"
+          title={`Destination: ${destination.label}`}
+          zIndexOffset={2000}
         >
           <Popup>
-            <div className="px-4 py-3 text-sm">
-              <p className="eyebrow">Destination</p>
-              <p className="font-semibold text-ink">{destination.label}</p>
-            </div>
+            <EndpointPopup kind="Destination" place={destination} />
           </Popup>
         </Marker>
       )}
     </>
+  )
+}
+
+function EndpointPopup({ kind, place }: { kind: string; place: Place }) {
+  return (
+    <div className="py-3 pr-9 pl-4 text-sm">
+      <p className="kicker">{kind}</p>
+      <p className="font-semibold text-ink">{place.label}</p>
+    </div>
   )
 }
 
@@ -271,13 +372,13 @@ export function CorridorLayer({
     }
     const renderer = L.canvas({ pane: CORRIDOR_PANE, padding: 0.3 })
     const layerGroup = L.layerGroup()
-    rectangles.current = corridor.cells.map((cell, index) => {
+    rectangles.current = corridor.cells.map((cell) => {
       const rectangle = L.rectangle(cellBounds(cell.lat, cell.lon, corridor.cell_size_deg), {
         ...cellStyle(cell.risk[hourRef.current]),
         renderer,
         pane: CORRIDOR_PANE,
+        interactive: false,
       })
-      rectangle.on('click', () => onSelectRef.current?.(index))
       layerGroup.addLayer(rectangle)
       return rectangle
     })
@@ -289,6 +390,24 @@ export function CorridorLayer({
       layerGroup.remove()
       rectangles.current = []
       group.current = null
+    }
+  }, [corridor, map])
+
+  // Cell picking. The overlay pane's canvas (routes, checkpoints) sits above this pane and takes
+  // every pointer event, so cells are found from the clicked position on the grid instead.
+  useEffect(() => {
+    const half = corridor.cell_size_deg / 2
+    const onClick = (event: L.LeafletMouseEvent) => {
+      if (!visibleRef.current) return
+      const { lat, lng } = event.latlng
+      const index = corridor.cells.findIndex(
+        (cell) => Math.abs(cell.lat - lat) <= half && Math.abs(cell.lon - lng) <= half,
+      )
+      if (index !== -1) onSelectRef.current?.(index)
+    }
+    map.on('click', onClick)
+    return () => {
+      map.off('click', onClick)
     }
   }, [corridor, map])
 
@@ -318,7 +437,7 @@ export function CorridorLayer({
     <Rectangle
       bounds={bounds}
       interactive={false}
-      pathOptions={{ color: '#0f172a', weight: 2.5, fillOpacity: 0 }}
+      pathOptions={{ color: INK, weight: 2.5, fillOpacity: 0, dashArray: undefined }}
     />
   ) : null
 }

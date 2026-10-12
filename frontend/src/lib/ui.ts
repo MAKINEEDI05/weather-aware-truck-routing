@@ -1,19 +1,20 @@
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'inverse' | 'outline-dark'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
+// Actions are drawn in ink, never in a risk or route colour.
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary:
-    'bg-brand text-white hover:bg-brand-strong disabled:bg-brand/50 disabled:hover:bg-brand/50',
+  primary: 'bg-ink text-white hover:bg-ink-2 disabled:bg-ink/40 disabled:hover:bg-ink/40',
   secondary:
-    'border border-line bg-white text-ink hover:bg-slate-50 disabled:text-ink-subtle disabled:hover:bg-white',
-  ghost: 'text-brand hover:bg-brand-soft disabled:text-ink-subtle',
-  danger: 'bg-red-600 text-white hover:bg-red-700',
+    'border border-line-strong bg-surface text-ink hover:bg-paper disabled:text-ink-3 disabled:hover:bg-surface',
+  ghost: 'text-ink hover:bg-paper-2 disabled:text-ink-3',
+  inverse: 'bg-white text-ink hover:bg-paper',
+  'outline-dark': 'border border-asphalt-3 text-white hover:bg-asphalt-2',
 }
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 gap-1.5 rounded-lg px-3 text-xs',
-  md: 'h-10 gap-2 rounded-[10px] px-4 text-sm',
-  lg: 'h-12 gap-2 rounded-[10px] px-5 text-base',
+  sm: 'h-8 gap-1.5 rounded-md px-3 text-[13px]',
+  md: 'h-10 gap-2 rounded-md px-4 text-sm',
+  lg: 'h-12 gap-2 rounded-md px-5 text-[15px]',
 }
 
 export function buttonClass(
