@@ -19,6 +19,9 @@ frontend/dist/
 frontend/coverage/
 *.tsbuildinfo
 
+# Local design references (not committed)
+design/
+
 # Logs
 *.log
 
