@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Keep Leaflet's panes and controls below app overlays added in later phases. */
+.leaflet-container {
+  font: inherit;
+  z-index: 0;
+}
