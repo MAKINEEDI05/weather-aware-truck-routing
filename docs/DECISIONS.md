@@ -7,7 +7,7 @@ implementation (DEC-29 onwards) are written out in full.
 
 Order of authority (most authoritative first):
 
-1. **Assessment PDF** (`fs-assessment-spotter.pdf`): mandatory requirements.
+1. **Assessment PDF** (`fs-assessment-spotter.pdf`, kept locally and not in the repository): mandatory requirements.
 2. **Approved blueprint** and this register: architecture and implementation decisions.
 3. **Design references** (`design/*.png`, kept out of Git): visual direction only. They are not
    business logic, and their numbers are not data.
