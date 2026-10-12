@@ -97,3 +97,13 @@ export function formatLatLonCardinal(lat: number, lon: number): string {
 export function formatMilepost(mile: number): string {
   return formatValue(mile, mile % 1 === 0 ? 0 : 1)
 }
+
+/** "just now", "12 min ago", "3 h ago", "2 days ago" — the age of something calculated earlier. */
+export function formatAge(milliseconds: number): string {
+  const minutes = Math.floor(Math.max(0, milliseconds) / 60_000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes} min ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 48) return `${hours} h ago`
+  return `${Math.floor(hours / 24)} days ago`
+}

@@ -105,7 +105,7 @@ Tuple = (Severe mi, High mi, avg risk, time s, No Travel mi).
 ### 2.7 Corridor — `tests/unit/test_corridor.py`
 
 Cells include every 5-mi sample's cell plus 8 neighbours · centres at `(i + 0.5) × size` ·
-> 200 cells → 0.5°, then 1.0°, then 1.0° without buffer (regression for VF-11) · hour series length 49 · missing hour → −1 · cell risk uses the
+> 200 cells → 0.5°, then 0.5° without buffer (DEC-57), then 1.0°, then 1.0° without buffer (regression for VF-11) · hour series length 49 · missing hour → −1 · cell risk uses the
 user's load (45 mph: 30,000 → SEVERE, 30,001 → NO_TRAVEL).
 
 ## 3. Backend service tests (mocked HTTP) — `tests/services/`
@@ -190,6 +190,8 @@ spaced about a minute apart.
 | `pages/RouteDetailsPage.test.tsx` | Stats; checkpoint rows (ETA, values, text risk); level filter incl. Unknown; table ↔ map selection; tabs; unknown route id |
 | `pages/RecommendationPage.test.tsx` | RECOMMENDED explanation and decision trace; comparison table in rank order; "why not" texts; NO_ELIGIBLE_ROUTE with "Try a later departure" focusing the departure; NO_WEATHER_DATA with "Retry weather" |
 | `pages/HeatmapPage.test.tsx` | Slider label (clock time + "departure + k h"), prev/next, bounds 0–48, **no network requests while sliding**, cell details per hour, layer toggles, explanatory text |
+| `state/tripStorage.test.ts` | Saved-trip records: empty storage, round trip, stored keys (no secrets), malformed JSON / wrong version / expired / future time / invalid result shapes discarded, orphaned UI record, UI fallback to the result's inputs, out-of-range selection and hour, failed save (quota) removes the older trip |
+| `state/persistence.test.tsx` | Reload = unmount + render with the same storage: empty start saves nothing; successful plan saved with inputs and selection; restore without new requests and with the calculation time; map selection, slider and navigation after restore; slider hour and selection restored; corrupted/incompatible/expired storage ignored; outdated after an input change (also after reload) until re-planned; New trip from results and from the planner; repeated reloads make no requests |
 | `lib/lib.test.ts` | Formatting (durations, miles, CDT/CST), risk codes (unknown never Low), rank order, bounds, cell styles, slider hour times, criteria pair formatting, runner-up, "why not" for a higher-ranked ineligible route |
 
 jsdom has no layout engine, so the Leaflet module (`features/map/index.ts`) is replaced in
@@ -211,6 +213,7 @@ with arrow keys, so slider keyboard use is verified in Chrome (§8).
 8. The slider recolours the heatmap; the Network panel shows no requests.
 9. Usable at 375 px; keyboard-only flow works.
 10. With the backend stopped: error state with Retry; with no TomTom key: `ROUTING_NOT_CONFIGURED` message.
+11. Plan a trip, reload any results page: the trip returns with "Restored after reload" and the calculation time, and the Network panel shows no plan request. New trip clears it; closing the tab clears it.
 
 ## 9. Fixture policy
 

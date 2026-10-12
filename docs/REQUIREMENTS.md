@@ -139,9 +139,9 @@ With `30,000 < L ≤ 40,000` and `35 ≤ w < 45`, wind stays HIGH (a consequence
 ### 4.4 Corridor heatmap (DEC-15, DEC-16, DEC-34)
 
 - Hour k ∈ [0, 48] = `floor_to_hour(departure) + k h`.
-- Cells: 0.25° grid touched by any route (sampled every 5 mi) plus a one-cell buffer; coarsened
-  to 0.5° and then 1.0° while there are more than 200 cells, and as a last resort 1.0° without the
-  buffer (DEC-34).
+- Cells: 0.25° grid touched by any route (sampled every 5 mi) plus a one-cell buffer; while there
+  are more than 200 cells: 0.5° with the buffer, 0.5° without it (only cells the routes pass
+  through), 1.0° with the buffer, and as a last resort 1.0° without it (DEC-34, DEC-57).
 - Cell colour = overall risk at that hour using the same classifier and the user's load. For hour
   T, wind, rain and snow all use the record stamped T (the same rule as an ETA exactly on the hour).
 - The heatmap never changes checkpoint colours. Checkpoints show conditions at the truck's ETA.

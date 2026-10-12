@@ -97,12 +97,27 @@ def test_cell_cap_keeps_weather_requests_within_the_per_minute_limit() -> None:
     assert MAX_CELLS == 200
 
 
+def test_long_trips_keep_half_degree_cells_by_dropping_the_buffer() -> None:
+    # About 2,400 mi: the buffered 0.5° grid is too big, the route-only 0.5° band fits (DEC-57).
+    profile = _profile(LatLon(47, -122), LatLon(40, -75), 400)
+    samples = sample_route(profile)
+    assert len(_cells_for(samples, 0.5, buffer=1)) > MAX_CELLS
+    assert len(_cells_for(samples, 0.5, buffer=0)) <= MAX_CELLS
+
+    size, centres = corridor_cells([profile])
+
+    assert size == 0.5
+    assert len(centres) == len(_cells_for(samples, 0.5, buffer=0))
+    assert all(math.isclose((c.lat / 0.5) % 1, 0.5) for c in centres)
+
+
 def test_continental_trips_drop_the_buffer_as_a_last_resort() -> None:
     profiles = [
         _profile(LatLon(47, -122), LatLon(25.8, -80.2), 400),
         _profile(LatLon(34, -118), LatLon(42.4, -71), 400),
     ]
     samples = [p for profile in profiles for p in sample_route(profile)]
+    assert len(_cells_for(samples, 0.5, buffer=0)) > MAX_CELLS  # even the 0.5° band is too big
     assert len(_cells_for(samples, 1.0, buffer=1)) > MAX_CELLS  # the buffered 1° grid is too big
 
     size, centres = corridor_cells(profiles)

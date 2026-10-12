@@ -51,6 +51,7 @@ From the PDF:
 | VF-13 | TomTom route counts with `maxAlternatives=2`, truck mode, departure ≈ now + 3 h: **3 routes** for each of Chicago → Denver, Dallas → Atlanta, Seattle → Salt Lake City, Los Angeles → Phoenix and Kansas City → Minneapolis. Chicago → Denver departing ≈ now + 30 h returned **2 routes**. The count varies with departure time. Geometry is dense: 4.5k–15k points per route. | Live calls | 2026-10-12 |
 | VF-14 | TomTom Geocode is fuzzy and can return **state-level** results: "Denvr, CA" → "California" (`entityType` `CountrySubdivision`, highest score), then Denver CO/NC/MI/NY; gibberish still returns neighbourhood matches. Postcodes return `PostalCodeArea` and street results. | Live calls | 2026-10-12 |
 | VF-15 | TomTom returns HTTP 400 for an unroutable pair (Honolulu, HI → Denver, CO), which the app maps to 422 `NO_ROUTE_FOUND`. | Live call via the UI | 2026-10-12 |
+| VF-16 | TomTom response caching headers (live, 2026-10-12): **calculateRoute → `Cache-Control: no-cache, no-transform`, `Pragma: no-cache`**; geocode → no caching directive. The full terms text still could not be retrieved (the legal page renders client-side). Secondary summaries say TomTom permits caching only as response headers allow and not to serve multiple users. This bears on DEC-56, which keeps a result in the same user's tab for up to 12 h. | Live call; web search | 2026-10-12 |
 
 **Live verification status (2026-10-12):** TomTom geocoding and truck routing are **verified
 against the live API** (`pytest -m live`, 8 passed; plus manual API and browser runs). Unit and
@@ -94,7 +95,7 @@ unless measured size requires it.
 | DEC-39 | **Road names ("via I-80") are not shown.** Routes are labelled Route A/B/C (provider order) with distance, time and arrival. | Road names need TomTom guidance instructions, which are not requested and cannot be verified without a key. |
 | DEC-40 | **Brand assets are placeholders:** the logo and landing illustration use clearly named slots (`frontend/src/assets/brand.ts`) with restrained generic fallbacks. | The client will supply the brand assets later. |
 | DEC-41 | **No "Sample data" badge and no mockup numbers in the app.** Every number shown comes from an API response. | The mockup values are illustrative only. |
-| DEC-42 | **Trip state lives in memory only** (lost on page reload; pages then show the "No trip planned yet" state). | DEC-2; avoids showing stale forecasts. |
+| DEC-42 | ~~**Trip state lives in memory only**~~ — **superseded by DEC-56** (2026-10-12). | DEC-2; avoids showing stale forecasts. |
 | DEC-43 | **Health check on two paths:** `/api/v1/health/` (contract) and `/api/health/` (alias requested in Phase 1). Every path ends with `/`. | Phase 1 request plus blueprint contract. |
 | DEC-44 | **Versions:** React 19 + React Leaflet 5, TypeScript 6.0, Vite 8, Tailwind 4, Django 5.2 LTS, DRF 3.18. | Verified compatible in Phase 1; React Leaflet 5 requires React 19. |
 | DEC-45 | **No database configured** (`DATABASES = {}`). | Nothing persists; Django needs neither SQLite nor `migrate`. |
@@ -108,6 +109,8 @@ unless measured size requires it.
 | DEC-53 | **Open-Meteo 429 is not retried**; batches that hit it set `rate_limited`, and the warning says to wait about a minute and plan again. The cache means the retry fetches only the missing points. | The limit is per minute, so an immediate retry only spends another call. |
 | DEC-54 | **Geocode drops `Country` and `CountrySubdivision` results.** | A whole state is not a trip endpoint; routing would go to its centroid (VF-14). |
 | DEC-55 | **gunicorn `--timeout 120`** (amends DEC-26's 60 s). | Worst case: routing read timeout 30 s + one retry, plus weather batches, can exceed 60 s. 120 s matches the frontend's client timeout. |
+| DEC-56 | **The last successful trip survives a reload** (supersedes DEC-42). The result is saved to `sessionStorage` once per plan and the UI state (form inputs, selected route and checkpoint, slider hour) as it changes, under a schema version; records are validated on load and discarded when malformed, versioned out or older than 12 h. A restore makes no routing or weather request; results pages say "Restored after reload" with the calculation time, and "Outdated" once an input changes. **New trip** clears everything. | Users lost their results on every refresh. `sessionStorage` (per tab, cleared when the tab closes) avoids cross-tab overwrites and keeps provider results out of long-term storage while OPEN-10 is open; the labels address DEC-42's stale-forecast concern. |
+| DEC-57 | **A route-only 0.5° band comes before a buffered 1.0° grid** (amends DEC-34): tiers are 0.25°+buffer, 0.5°+buffer, **0.5° without buffer**, 1.0°+buffer, 1.0° without buffer; the first with ≤ 200 cells is used. | Same weather budget, more accuracy where the truck drives: live Chicago → Denver went from 154 cells at 1.0° (cell centres up to ~50 mi from the road) to 130 cells at 0.5° (within ~20 mi), 273 instead of 297 Open-Meteo locations. Trade-off: the heatmap is a band along the routes rather than a regional block. |
 
 ## 5. Contradictions found and how they were resolved
 
@@ -144,7 +147,7 @@ unless measured size requires it.
 | OPEN-7 | How does Open-Meteo count multi-location requests? | **Resolved 2026-10-12:** per location (VF-11) → DEC-34 revised, DEC-52, DEC-53 |
 | OPEN-8 | Does an assessment demo count as non-commercial use of Open-Meteo? | Assumed yes (A-2) |
 | OPEN-9 | Which hosts for deployment? | README gives instructions for Render + Vercel/Netlify; not deployed |
-| OPEN-10 | Do TomTom's terms restrict caching or display on OSM tiles? | No TomTom caching; **user to read the terms** |
+| OPEN-10 | Do TomTom's terms restrict caching or display on OSM tiles? | No server-side TomTom caching; DEC-56 keeps the last result in the user's own tab (`sessionStorage`, ≤ 12 h) although routing responses say `no-cache` (VF-16). **User to read the terms**; if they forbid this, persist only the form inputs. |
 | OPEN-11 | Should No Travel miles count toward "Severe miles"? | DEC-13 (no) + DEC-12 |
 | OPEN-12 | Does TomTom return 3 routes for typical US truck trips? | **Resolved 2026-10-12:** yes for all 5 evidence trips; occasionally fewer (VF-13, DEC-47) |
 

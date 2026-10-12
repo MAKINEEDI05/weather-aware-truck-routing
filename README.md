@@ -134,6 +134,7 @@ limit, so space live runs about a minute apart.
 | TomTom route count, Chicago → Denver, departure ≈ now + 30 h | **2 routes** (warning shown); the count varies with departure time |
 | Route data | 4.5k–15k geometry points per route; sparse `progress[]` (86 entries for 10,649 points), ending exactly at the summary length and travel time |
 | Full plan Chicago → Denver (25 mi, 42,000 lb) | 6.7–7.0 s; 293 weather locations; 154 heatmap cells (1.0°); response 1.2 MB raw / 265 KB gzipped |
+| Same trip after DEC-57 (2026-10-12, 38,000 lb) | 9.0 s; 273 weather locations; 130 heatmap cells (0.5°, route band) |
 | 10-mile interval, same trip | full weather on 218 checkpoints |
 | Real geocoding | Springfield → MO, IL, MA, VA, OR candidates; "Denvr, CA" → Denver CO/NC/MI/NY (state-level results dropped) |
 | Unroutable trip (Honolulu → Denver) | TomTom 400 → 422 `NO_ROUTE_FOUND` → "No truck route found" in the UI |
@@ -147,8 +148,8 @@ limit, so space live runs about a minute apart.
 
 | Check | Result |
 |---|---|
-| `pytest -m "not live"` | 249 passed, coverage 98% (domain modules 95–100%) |
-| `npm test -- --run` | 96 passed |
+| `pytest -m "not live"` | 250 passed, coverage 98% (domain modules 95–100%) |
+| `npm test -- --run` | 127 passed |
 | ruff, ESLint, Prettier, `tsc -b`, `npm run build`, `manage.py check --deploy` (production env) | clean |
 | States that live weather did not produce today (No Travel, Severe, no-eligible-route, rate-limited weather) | covered by unit, planner and component tests |
 
@@ -221,14 +222,17 @@ and set `VITE_API_BASE_URL=https://<backend-host>/api/v1` at build time. SPA rew
   locations, so planning several new trips within a minute can leave some points Unknown. The app
   says so and a re-plan a minute later fills the gaps from cache (DEC-52, DEC-53).
 - Road names ("via I-80") are not shown (DEC-39).
-- The trip result lives in memory; reloading a results page shows "No trip planned yet".
-- Long trips use a coarser heatmap grid (0.5° or 1.0°) to bound weather requests (DEC-34).
+- The last trip survives a page reload in the same browser tab (12 h, `sessionStorage`) and is
+  labelled with when it was calculated — reloading never fetches new forecasts. Closing the tab or
+  **New trip** clears it (DEC-56).
+- Long trips use a coarser heatmap grid (0.5° or 1.0°) to bound weather requests; a ~1,000-mile
+  trip gets a 0.5° band along the routes rather than a wider 1.0° block (DEC-34, DEC-57).
 - Plan responses for long trips are large (≈ 1.2 MB raw, ≈ 265 KB gzipped) because route geometry is
   sent at full provider detail (DEC-28).
 
 ## Remaining work
 
-1. Commit the work (the owner commits; see `git status`).
+1. Commit the work (the owner commits; see `git status`), add a GitHub remote and push.
 2. Read the TomTom terms (OPEN-10).
 3. Deploy (see above), then run the post-deploy checks and record the Loom walkthrough
    ([`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md)).

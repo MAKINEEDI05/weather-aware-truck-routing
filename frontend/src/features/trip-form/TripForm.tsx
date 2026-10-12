@@ -3,7 +3,7 @@ import type { FormEvent, ReactNode } from 'react'
 import { Link } from 'react-router'
 import { ArrowRight, ArrowUpDown, LoaderCircle } from 'lucide-react'
 import type { CheckpointInterval } from '../../api/types'
-import { timeZoneName } from '../../lib/format'
+import { formatDateTime, timeZoneName } from '../../lib/format'
 import { buttonClass } from '../../lib/ui'
 import { useTrip } from '../../state/TripContext'
 import { FieldError, LocationSearch } from './LocationSearch'
@@ -12,7 +12,6 @@ import {
   INTERVALS,
   MAX_DEPARTURE_DAYS,
   defaultDepartureLocal,
-  draftMatchesResult,
   parseLoad,
   parseLocalDateTime,
   serverErrorsToFields,
@@ -36,7 +35,7 @@ interface TripFormProps {
 }
 
 export function TripForm({ onPlanned }: TripFormProps) {
-  const { draft, updateDraft, status, error, result, submitPlan } = useTrip()
+  const { draft, updateDraft, status, error, result, restored, outdated, submitPlan } = useTrip()
   const [submitted, setSubmitted] = useState(false)
   const loading = status === 'loading'
 
@@ -72,7 +71,6 @@ export function TripForm({ onPlanned }: TripFormProps) {
 
   const now = new Date()
   const zone = timeZoneName()
-  const inputsChanged = result !== null && !draftMatchesResult(draft, result)
 
   return (
     <form
@@ -228,8 +226,21 @@ export function TripForm({ onPlanned }: TripFormProps) {
       <div className="border-t border-line pt-5">
         {result && !loading && (
           <p className="mb-3 text-sm text-ink-2">
-            {inputsChanged ? (
+            {outdated ? (
               <>Inputs changed — plan again to update the results.</>
+            ) : restored ? (
+              <>
+                These inputs match results restored after a reload, calculated{' '}
+                <span className="num text-[13px]">{formatDateTime(result.meta.generated_at)}</span>.
+                Plan routes again for current forecasts, or{' '}
+                <Link
+                  to="/routes"
+                  className="font-semibold text-accent-ink underline underline-offset-2"
+                >
+                  view them
+                </Link>
+                .
+              </>
             ) : (
               <>
                 These inputs match the current results.{' '}

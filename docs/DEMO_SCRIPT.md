@@ -1,4 +1,4 @@
-# Loom walkthrough script (about 8 minutes)
+# Loom walkthrough script (about 9 minutes)
 
 Record against the **hosted** app with a real TomTom key. Show only real behaviour: if the live
 weather is calm, say so and demonstrate the rules through the tests instead.
@@ -11,12 +11,13 @@ weather is calm, say so and demonstrate the rules through the tests instead.
 
 | Time | Segment | What to show and say |
 |---|---|---|
-| 0:00–0:45 | Problem | Landing page. "Pick the safest truck route from weather, load and time. Three pieces: real routes, forecast at each ETA, a ranking you can explain." |
-| 0:45–2:15 | Plan a trip | `/plan`: search "Springfield" to show candidate picking, then Chicago → Denver, 42,000 lb, 25 mi. Point out the rules table and the "within 7 days" window. Plan. |
-| 2:15–3:15 | Routes | `/routes`: the route count from TomTom (and the warning if fewer than 3). Cards in rank order; Recommended / Not recommended badges; click a route line for its summary; click a checkpoint for ETA, values, forecast hours and reasons. |
-| 3:15–4:15 | Recommendation | `/recommendation`: the explanation sentence, the decision trace (tie → tie → decides), the comparison table with the losing cell highlighted, and the No Travel app policy. |
-| 4:15–4:45 | Interval | Edit trip → 10 mi → plan again: more checkpoints, same covered-miles method (Σ covered = route length). |
-| 4:45–5:45 | Heatmap | `/heatmap`: drag the slider 0 → 48 h with the Network panel open (no requests). Explain "heatmap = whole corridor at one clock hour; dots = each point at the truck's ETA". Click a cell. |
-| 5:45–6:45 | Code | `backend/trips/domain/risk.py` (quoted PDF table, half-open wind ranges, strict load rules); `recommend.py` (`RANKING_CRITERIA`, eligibility separate from ranking). |
-| 6:45–7:30 | Tests | `pytest -m "not live" -q` and `npm test -- --run`; open `test_risk.py` boundary rows and `test_recommend.py` K1–K17. |
-| 7:30–8:00 | Limits | Continuous-driving ETAs, grid-cell forecasts, free-tier limits, open questions in `docs/DECISIONS.md`. |
+| 0:00–0:40 | Problem | Landing page. "Pick the safest truck route from weather, load and time. Three pieces: real routes, the forecast at each checkpoint's ETA, and a ranking you can explain." Point at the risk ramp: colour always comes with a label; Unknown is never Low. |
+| 0:40–2:00 | Plan a trip | `/plan` (step 01 in the top bar): search "Springfield" to show candidate picking, then Chicago → Denver, 42,000 lb, 25 mi. Show the load scale (which wind rule applies) and the rules table. Plan; the loader states elapsed time, not fake progress. |
+| 2:00–3:10 | Routes | `/routes`: the real route count (warning if fewer than 3). Each card's strip is the risk **along** the route; the four ranking criteria sit in priority order and the one a route lost on is filled. On the map, routes carry their letter; click a line for its summary, a checkpoint for ETA, values, forecast hours and reasons. |
+| 3:10–4:30 | Recommendation | `/recommendation`: the explanation, the tie-break ladder (tie → tie → decides), the matrix with the losing cell filled, and the No Travel app policy. **Say how "balancing" is read:** the PDF's order is applied strictly — risk first, travel time only breaks ties — so one Moderate checkpoint outranks hours of driving; the text says when a losing route was faster ("travel time is only the fourth priority"). |
+| 4:30–5:00 | Interval | Edit trip → 10 mi → plan again: more checkpoints, same covered-miles method (Σ covered = route length). |
+| 5:00–6:00 | Heatmap | `/heatmap`: drag the slider 0 → 48 h with the Network panel open (no requests). The histogram shows corridor risk per hour; the bar under it is the selected route's time on the road. Long trips use a 0.5° band along the routes (DEC-57). Click a cell. |
+| 6:00–6:40 | Reload | Reload the page: the trip returns with "Restored after reload" and its calculation time; the Network panel shows no plan request. Change the load → "Outdated results" until re-planned. **New trip** clears it (DEC-56). |
+| 6:40–7:40 | Code | `backend/trips/domain/risk.py` (quoted PDF table, half-open wind ranges, strict load rules); `recommend.py` (`RANKING_CRITERIA`, eligibility separate from ranking); `frontend/src/state/tripStorage.ts` (versioned, validated restore). |
+| 7:40–8:30 | Tests | `pytest -m "not live" -q` (250) and `npm test -- --run` (127); open `test_risk.py` boundary rows and `test_recommend.py` K1–K17. |
+| 8:30–9:00 | Limits | Continuous-driving ETAs, grid-cell forecasts, Open-Meteo free-tier limits, restored results are labelled and expire after 12 h, open questions in `docs/DECISIONS.md` (OPEN-10). |

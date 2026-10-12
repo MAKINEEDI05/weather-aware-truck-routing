@@ -2,9 +2,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react'
 import { ApiError, PLAN_TIMEOUT_MS, planTrip } from '../api/client'
 import type { PlanRequest, PlanResponse } from '../api/types'
-import { emptyDraft, toPlanRequest } from '../features/trip-form/validation'
+import { draftMatchesResult, emptyDraft, toPlanRequest } from '../features/trip-form/validation'
 import type { TripDraft } from '../features/trip-form/validation'
 import { defaultRouteId } from '../lib/routes'
+import {
+  clearSavedTrip,
+  draftFromRequest,
+  loadSavedTrip,
+  saveTripResult,
+  saveTripUi,
+} from './tripStorage'
+import type { SavedTrip } from './tripStorage'
 
 export type PlanStatus = 'idle' | 'loading' | 'error'
 
@@ -21,8 +29,18 @@ interface TripContextValue {
   loadingSince: number | null
   /** The last successful plan. Kept while re-planning so other pages stay usable. */
   result: PlanResponse | null
+  /** Browser time (ms) when `result` was calculated; null for results injected by tests. */
+  calculatedAt: number | null
+  /** True when `result` was restored from browser storage after a reload. */
+  restored: boolean
+  /** True when the form inputs no longer match the inputs that produced `result`. */
+  outdated: boolean
   submitPlan: () => Promise<boolean>
   retryPlan: () => Promise<boolean>
+  /** Clears the planner, the results and the saved trip. */
+  newTrip: () => void
+  /** Changes on every New trip, so forms can remount with fresh local state. */
+  tripSession: number
   selectedRouteId: string | null
   selectRoute: (routeId: string) => void
   selectedCheckpoint: SelectedCheckpoint | null
@@ -35,26 +53,49 @@ const TripContext = createContext<TripContextValue | null>(null)
 
 interface TripProviderProps {
   children: ReactNode
-  /** Test hooks: start with a result and/or a draft. */
+  /** Test hooks: start with a result and/or a draft. Either one disables restoring. */
   initialResult?: PlanResponse
   initialDraft?: TripDraft
 }
 
 export function TripProvider({ children, initialResult, initialDraft }: TripProviderProps) {
-  const [draft, setDraft] = useState<TripDraft>(() => initialDraft ?? emptyDraft())
+  // Restore once, before the first render, so pages never flash the empty state.
+  const [saved] = useState<SavedTrip | null>(() =>
+    initialResult || initialDraft ? null : loadSavedTrip(),
+  )
+  const [draft, setDraft] = useState<TripDraft>(
+    () =>
+      saved?.draft ??
+      initialDraft ??
+      (initialResult ? draftFromRequest(initialResult) : emptyDraft()),
+  )
   const [status, setStatus] = useState<PlanStatus>('idle')
   const [error, setError] = useState<ApiError | null>(null)
   const [loadingSince, setLoadingSince] = useState<number | null>(null)
-  const [result, setResult] = useState<PlanResponse | null>(initialResult ?? null)
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(
-    initialResult ? (defaultRouteId(initialResult) ?? null) : null,
+  const [result, setResult] = useState<PlanResponse | null>(saved?.result ?? initialResult ?? null)
+  const [calculatedAt, setCalculatedAt] = useState<number | null>(saved?.calculatedAt ?? null)
+  const [restored, setRestored] = useState(saved !== null)
+  // Whether the current result is in storage, i.e. UI changes should be saved alongside it.
+  const [persisted, setPersisted] = useState(saved !== null)
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(() =>
+    saved ? saved.selectedRouteId : initialResult ? (defaultRouteId(initialResult) ?? null) : null,
   )
-  const [selectedCheckpoint, setSelectedCheckpoint] = useState<SelectedCheckpoint | null>(null)
-  const [hour, setHourState] = useState(0)
+  const [selectedCheckpoint, setSelectedCheckpoint] = useState<SelectedCheckpoint | null>(
+    saved?.selectedCheckpoint ?? null,
+  )
+  const [hour, setHourState] = useState(saved?.hour ?? 0)
+  const [tripSession, setTripSession] = useState(0)
   const inFlight = useRef<AbortController | null>(null)
   const lastRequest = useRef<PlanRequest | null>(null)
 
   useEffect(() => () => inFlight.current?.abort(), [])
+
+  // Keep the small UI record in step with the saved result.
+  useEffect(() => {
+    if (persisted && result && calculatedAt !== null) {
+      saveTripUi(calculatedAt, { draft, selectedRouteId, selectedCheckpoint, hour })
+    }
+  }, [persisted, result, calculatedAt, draft, selectedRouteId, selectedCheckpoint, hour])
 
   const updateDraft = useCallback((changes: Partial<TripDraft>) => {
     setDraft((current) => ({ ...current, ...changes }))
@@ -76,7 +117,11 @@ export function TripProvider({ children, initialResult, initialDraft }: TripProv
     setLoadingSince(Date.now())
     try {
       const response = await planTrip(request, controller.signal)
+      const now = Date.now()
       setResult(response)
+      setCalculatedAt(now)
+      setRestored(false)
+      setPersisted(saveTripResult(response, now))
       setSelectedRouteId(defaultRouteId(response) ?? null)
       setSelectedCheckpoint(null)
       setHourState(0)
@@ -84,7 +129,7 @@ export function TripProvider({ children, initialResult, initialDraft }: TripProv
       return true
     } catch (caught) {
       if (controller.signal.aborted && !timedOut) {
-        return false // superseded by a newer request or unmounted
+        return false // superseded by a newer request, New trip or unmounted
       }
       setError(
         timedOut
@@ -113,6 +158,25 @@ export function TripProvider({ children, initialResult, initialDraft }: TripProv
     return request ? run(request) : submitPlan()
   }, [run, submitPlan, result])
 
+  const newTrip = useCallback(() => {
+    inFlight.current?.abort()
+    inFlight.current = null
+    lastRequest.current = null
+    clearSavedTrip()
+    setPersisted(false)
+    setDraft(emptyDraft())
+    setResult(null)
+    setCalculatedAt(null)
+    setRestored(false)
+    setStatus('idle')
+    setError(null)
+    setLoadingSince(null)
+    setSelectedRouteId(null)
+    setSelectedCheckpoint(null)
+    setHourState(0)
+    setTripSession((value) => value + 1)
+  }, [])
+
   const selectRoute = useCallback((routeId: string) => {
     setSelectedRouteId(routeId)
     setSelectedCheckpoint((current) => (current?.routeId === routeId ? current : null))
@@ -122,6 +186,8 @@ export function TripProvider({ children, initialResult, initialDraft }: TripProv
     setHourState(Math.max(0, Math.min(48, Math.round(value))))
   }, [])
 
+  const outdated = result !== null && !draftMatchesResult(draft, result)
+
   const value = useMemo<TripContextValue>(
     () => ({
       draft,
@@ -130,8 +196,13 @@ export function TripProvider({ children, initialResult, initialDraft }: TripProv
       error,
       loadingSince,
       result,
+      calculatedAt,
+      restored,
+      outdated,
       submitPlan,
       retryPlan,
+      newTrip,
+      tripSession,
       selectedRouteId,
       selectRoute,
       selectedCheckpoint,
@@ -146,8 +217,13 @@ export function TripProvider({ children, initialResult, initialDraft }: TripProv
       error,
       loadingSince,
       result,
+      calculatedAt,
+      restored,
+      outdated,
       submitPlan,
       retryPlan,
+      newTrip,
+      tripSession,
       selectedRouteId,
       selectRoute,
       selectedCheckpoint,

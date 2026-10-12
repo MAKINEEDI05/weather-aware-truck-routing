@@ -1,8 +1,10 @@
 """Corridor heatmap grid (DEC-15, DEC-16, DEC-34).
 
 Cells are a regular lat/lon grid touched by any route (sampled every 5 mi) plus a one-cell
-buffer. The grid is coarsened (0.25° → 0.5° → 1.0°) until it has at most 200 cells; as a last
-resort (continental-scale trips) the 1.0° grid keeps only the cells the routes touch. Each cell
+buffer. The grid is coarsened until it has at most 200 cells. Before giving up 0.5° detail, the
+buffer is dropped (only the cells the routes pass through), which keeps a ~1,000-mile trip at 0.5°
+instead of 1.0° for the same weather budget (DEC-57). As a last resort (continental-scale trips) the
+1.0° grid also keeps only the cells the routes touch. Each cell
 gets the overall risk for every hour 0–48 after the departure hour, using the same classifier
 and the user's load as the checkpoints. The grid exists only to draw the heatmap.
 """
@@ -21,11 +23,12 @@ from .timeutil import HOUR, floor_to_hour
 from .types import RISK_CODE, CorridorCell, CorridorGrid, HourlySeries, LatLon
 
 CELL_SIZES_DEG = (0.25, 0.5, 1.0)
-# (cell size, buffer in cells) tried in order; the last entry drops the buffer.
-GRID_TIERS: tuple[tuple[float, int], ...] = ((0.25, 1), (0.5, 1), (1.0, 1), (1.0, 0))
+# (cell size, buffer in cells) tried in order, finest first. A buffer-free 0.5° band is preferred
+# to a buffered 1.0° grid (DEC-57): real Chicago → Denver needs 130 cells vs 154, at 4× the detail.
+GRID_TIERS: tuple[tuple[float, int], ...] = ((0.25, 1), (0.5, 1), (0.5, 0), (1.0, 1), (1.0, 0))
 # 200, not the original 400 (DEC-34 amended): Open-Meteo counts every location against a
 # 600-per-minute limit (VF-11), and checkpoints need part of that budget. Real Chicago → Denver
-# routes need 369 cells at 0.5° and 154 at 1.0°.
+# routes need 369 cells at 0.5° with the buffer, 130 without it, and 154 at 1.0°.
 MAX_CELLS = 200
 SAMPLE_STEP_MI = 5.0
 HOURS = 49  # hours 0–48 inclusive

@@ -89,8 +89,14 @@ function FitBounds({ bounds, paddingTopLeft, paddingBottomRight }: FitBoundsProp
     padding.current = { paddingTopLeft, paddingBottomRight }
   })
   useEffect(() => {
-    // Refit only when the trip geometry changes, not on every render.
-    map.fitBounds(JSON.parse(key) as LatLngBoundsExpression, { ...padding.current, maxZoom: 9 })
+    // Refit only when the trip geometry changes, not on every render. Not animated: a zoom
+    // animation still running when the page unmounts makes Leaflet read a removed pane
+    // ("_leaflet_pos" TypeError) — easy to hit with quick navigation or a reload.
+    map.fitBounds(JSON.parse(key) as LatLngBoundsExpression, {
+      ...padding.current,
+      maxZoom: 9,
+      animate: false,
+    })
   }, [map, key])
   return null
 }

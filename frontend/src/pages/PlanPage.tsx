@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { MousePointerClick } from 'lucide-react'
+import { MousePointerClick, Plus } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { PlanErrorState } from '../components/PlanStates'
 import { RankingList, RiskRulesTable } from '../components/RulesContent'
@@ -9,10 +9,11 @@ import { EndpointMarkers, TripMap } from '../features/map'
 import { EndpointGlyph } from '../features/trip-form/LocationSearch'
 import { TripForm } from '../features/trip-form/TripForm'
 import { boundsOf } from '../lib/bounds'
+import { buttonClass } from '../lib/ui'
 import { useTrip } from '../state/TripContext'
 
 export function PlanPage() {
-  const { draft, status, error, loadingSince, result, retryPlan } = useTrip()
+  const { draft, status, error, loadingSince, result, retryPlan, newTrip, tripSession } = useTrip()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -29,6 +30,8 @@ export function PlanPage() {
     [draft.origin, draft.destination],
   )
   const showError = status === 'error' && error !== null && error.status !== 400
+  const hasTrip =
+    result !== null || draft.origin !== null || draft.destination !== null || draft.loadText !== ''
   const loading = status === 'loading'
   const errorPanel = useRef<HTMLElement>(null)
 
@@ -44,6 +47,21 @@ export function PlanPage() {
       <PageHeader
         title="Plan a trip"
         kicker={result ? 'Step 1 · Edit trip' : 'Step 1 · New trip'}
+        aside={
+          hasTrip && (
+            <button
+              type="button"
+              onClick={() => {
+                newTrip()
+                navigate('/plan', { replace: true, state: { focus: 'origin-input' } })
+              }}
+              className={buttonClass('secondary', 'sm')}
+            >
+              <Plus className="size-3.5" aria-hidden="true" />
+              New trip
+            </button>
+          )
+        }
         description="Search for each place and pick the right match, then set when the truck leaves and what it carries. The routing service returns up to three truck routes to compare."
       />
       <div className="mx-auto grid w-full max-w-[1440px] flex-1 grid-cols-[minmax(0,1fr)] gap-6 p-4 lg:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] lg:gap-8 lg:p-8">
@@ -54,7 +72,7 @@ export function PlanPage() {
             </h2>
             <span className="kicker">All fields required</span>
           </div>
-          <TripForm onPlanned={() => navigate('/routes')} />
+          <TripForm key={tripSession} onPlanned={() => navigate('/routes')} />
         </section>
 
         <div className="flex min-w-0 flex-col gap-6">
