@@ -37,7 +37,7 @@ export function DecisionTrace({ recommended, other, comparison }: DecisionTraceP
             state === 'decided'
               ? otherAbove
                 ? 'border-closed bg-closed text-white'
-                : 'border-ink bg-ink text-white'
+                : 'border-accent bg-accent text-white'
               : state === 'tie'
                 ? 'border-line-strong bg-paper text-ink'
                 : 'border-dashed border-line-strong bg-surface text-ink-3'

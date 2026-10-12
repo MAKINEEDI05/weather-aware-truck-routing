@@ -64,10 +64,13 @@ export function RouteCard({
     <article
       aria-label={`${route.label}, rank ${route.rank}`}
       className={`relative overflow-hidden rounded-lg border bg-surface transition-shadow ${
-        selected
-          ? 'border-ink shadow-[0_0_0_1px_var(--color-ink)]'
-          : 'border-line hover:border-line-strong'
+        selected ? '' : 'border-line hover:border-line-strong'
       } ${className}`}
+      style={
+        selected
+          ? { borderColor: routeColor(route.id), boxShadow: `0 0 0 1px ${routeColor(route.id)}` }
+          : undefined
+      }
     >
       <span
         aria-hidden="true"
@@ -105,7 +108,7 @@ export function RouteCard({
               <span
                 key={figure.key}
                 className={`block border-line px-2 py-1.5 [&:not(:first-child)]:border-l ${
-                  lost ? 'bg-ink text-white' : ''
+                  lost ? 'bg-accent text-white' : ''
                 }`}
               >
                 <span

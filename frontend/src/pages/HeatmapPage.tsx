@@ -142,7 +142,7 @@ function Heatmap({ result }: { result: PlanResponse }) {
                   onClick={() => selectRoute(r.id)}
                   className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-[13px] font-semibold ${
                     r.id === selectedRouteId
-                      ? 'border-ink bg-ink text-white'
+                      ? 'border-accent bg-accent text-white'
                       : 'border-line-strong text-ink hover:bg-paper'
                   }`}
                 >
@@ -262,7 +262,7 @@ function Toggle({
       <span
         aria-hidden="true"
         className={`relative h-5 w-9 rounded-[5px] border transition-colors ${
-          checked ? 'border-ink bg-ink' : 'border-line-strong bg-paper-2'
+          checked ? 'border-accent bg-accent' : 'border-line-strong bg-paper-2'
         }`}
       >
         <span

@@ -150,7 +150,9 @@ function RiskTimeline({
           <div
             key={h}
             className={`absolute bottom-0 flex h-full -translate-x-1/2 flex-col-reverse overflow-hidden rounded-[2px] ${
-              h === hour ? 'outline-2 outline-offset-1 outline-ink' : 'opacity-80 hover:opacity-100'
+              h === hour
+                ? 'outline-2 outline-offset-1 outline-accent'
+                : 'opacity-80 hover:opacity-100'
             }`}
             style={{
               left: `${(h / MAX_HOUR) * 100}%`,
@@ -185,7 +187,7 @@ function DriveBand({ drive }: { drive: DriveWindow }) {
     <div className="mt-2" style={inset}>
       <div className="relative h-1.5 rounded-full bg-paper-2" aria-hidden="true">
         <span
-          className="absolute inset-y-0 rounded-full bg-ink"
+          className="absolute inset-y-0 rounded-full bg-accent"
           style={{
             left: `${(start / MAX_HOUR) * 100}%`,
             width: `${((end - start) / MAX_HOUR) * 100}%`,

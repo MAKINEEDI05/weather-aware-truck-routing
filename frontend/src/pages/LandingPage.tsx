@@ -90,15 +90,15 @@ export function LandingPage() {
       </header>
 
       <main>
-        <section className="on-dark relative overflow-hidden bg-asphalt text-white">
+        <section className="on-dark aurora relative overflow-hidden text-white">
           <div className="mx-auto grid max-w-[1280px] items-center gap-12 px-4 pt-12 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:pt-20 lg:pb-24">
             <div>
-              <p className="font-mono text-xs tracking-[0.14em] text-fog uppercase">
+              <p className="font-mono text-xs tracking-[0.14em] text-accent-on-dark uppercase">
                 Truck route planning · Continental US
               </p>
               <h1 className="mt-5 text-[40px] leading-[1.02] font-extrabold tracking-tight sm:text-6xl lg:text-[68px]">
                 Know the weather at every mile.{' '}
-                <span className="text-fog">Choose the safest route.</span>
+                <span className="text-sky-gradient">Choose the safest route.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/80">
                 Compare the truck routes a real routing service returns. Every checkpoint is scored
@@ -126,7 +126,7 @@ export function LandingPage() {
           className="mx-auto max-w-[1280px] scroll-mt-4 px-4 py-16 sm:px-6 lg:py-24"
           aria-labelledby="how-title"
         >
-          <p className="kicker">How a route is judged</p>
+          <p className="kicker !text-accent-ink">How a route is judged</p>
           <h2
             id="how-title"
             className="mt-2 max-w-3xl text-3xl leading-tight font-bold tracking-tight sm:text-4xl"
@@ -140,7 +140,9 @@ export function LandingPage() {
                   <span className="num text-sm font-semibold text-ink-3">
                     {String(index + 1).padStart(2, '0')}
                   </span>
-                  <Icon className="size-5 text-ink" aria-hidden="true" />
+                  <span className="flex size-9 items-center justify-center rounded-md bg-accent-soft text-accent-ink">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
                 </div>
                 <h3 className="mt-6 text-lg leading-snug font-bold">{title}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{text}</p>
@@ -152,7 +154,7 @@ export function LandingPage() {
         <section className="border-y border-line bg-surface" aria-labelledby="rules-title">
           <div className="mx-auto grid max-w-[1280px] gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-20">
             <div>
-              <p className="kicker">The tie-break ladder</p>
+              <p className="kicker !text-accent-ink">The tie-break ladder</p>
               <h2
                 id="rules-title"
                 className="mt-2 text-2xl leading-tight font-bold tracking-tight sm:text-3xl"
@@ -169,7 +171,7 @@ export function LandingPage() {
                     key={criterion}
                     className="flex items-center gap-4 rounded-md border border-line bg-paper px-4 py-3"
                   >
-                    <span className="num flex size-7 shrink-0 items-center justify-center rounded-[5px] bg-ink text-sm font-semibold text-white">
+                    <span className="num flex size-7 shrink-0 items-center justify-center rounded-[5px] bg-accent text-sm font-semibold text-white">
                       {index + 1}
                     </span>
                     <span className="font-semibold">{criterion}</span>
@@ -178,7 +180,7 @@ export function LandingPage() {
               </ol>
             </div>
             <div>
-              <p className="kicker">Load-aware wind limits</p>
+              <p className="kicker !text-accent-ink">Load-aware wind limits</p>
               <h3 className="mt-2 text-2xl leading-tight font-bold tracking-tight sm:text-3xl">
                 The same wind can be fine for one load and No Travel for another.
               </h3>
@@ -209,7 +211,7 @@ export function LandingPage() {
               </ul>
               <Link
                 to="/about#risk-rules"
-                className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2"
+                className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-accent-ink underline underline-offset-2"
               >
                 All wind, rain and snow thresholds
                 <ArrowRight className="size-4" aria-hidden="true" />
@@ -222,7 +224,7 @@ export function LandingPage() {
           className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 lg:py-20"
           aria-labelledby="views-title"
         >
-          <p className="kicker">After you plan</p>
+          <p className="kicker !text-accent-ink">After you plan</p>
           <h2
             id="views-title"
             className="mt-2 text-2xl leading-tight font-bold tracking-tight sm:text-3xl"
@@ -231,14 +233,14 @@ export function LandingPage() {
           </h2>
           <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {VIEWS.map((view, index) => (
-              <li key={view.title} className="border-t-2 border-ink pt-4">
+              <li key={view.title} className="border-t-2 border-accent pt-4">
                 <p className="num text-xs text-ink-3">{String(index + 1).padStart(2, '0')}</p>
                 <h3 className="mt-1 text-lg font-bold">{view.title}</h3>
                 <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">{view.text}</p>
               </li>
             ))}
           </ul>
-          <div className="mt-12 flex flex-col items-start gap-4 rounded-lg bg-ink p-6 text-white sm:flex-row sm:items-center sm:justify-between lg:p-8">
+          <div className="mt-12 flex flex-col items-start gap-4 rounded-lg bg-gradient-to-r from-accent-strong via-accent to-sky p-6 text-white sm:flex-row sm:items-center sm:justify-between lg:p-8">
             <p className="text-xl font-bold">Start with an origin and a destination.</p>
             <Link to="/plan" className={buttonClass('inverse', 'lg')}>
               <Route className="size-5" aria-hidden="true" />

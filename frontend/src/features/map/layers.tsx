@@ -8,7 +8,8 @@ import { NO_TRAVEL_OUTLINE, RISK } from '../../lib/risk'
 import { routeColor } from '../../lib/routes'
 import { CheckpointPopup, RouteSummaryPopup } from './popups'
 
-const INK = '#15171b'
+// Selection on the map uses the interface accent (iris), which no risk level shares.
+const ACCENT = '#5146e5'
 
 // ---------------------------------------------------------------------------------------------
 // Routes
@@ -219,7 +220,7 @@ function markerStyle(checkpoint: Checkpoint, selected: boolean, muted: boolean) 
       : level === 'NO_TRAVEL'
         ? { color: NO_TRAVEL_OUTLINE, weight: 2.5, fillColor: RISK.NO_TRAVEL.color, fillOpacity: 1 }
         : { color: '#ffffff', weight: 1.5, fillColor: RISK[level].color, fillOpacity: 1 }
-  if (selected) return { ...base, color: INK, weight: 3, opacity: 1 }
+  if (selected) return { ...base, color: ACCENT, weight: 3, opacity: 1 }
   return muted ? { ...base, opacity: 0.7, fillOpacity: base.fillOpacity * 0.7 } : base
 }
 
@@ -437,7 +438,7 @@ export function CorridorLayer({
     <Rectangle
       bounds={bounds}
       interactive={false}
-      pathOptions={{ color: INK, weight: 2.5, fillOpacity: 0, dashArray: undefined }}
+      pathOptions={{ color: ACCENT, weight: 3, fillOpacity: 0, dashArray: undefined }}
     />
   ) : null
 }

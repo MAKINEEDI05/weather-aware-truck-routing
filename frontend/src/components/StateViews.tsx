@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 type Tone = 'neutral' | 'danger' | 'warning' | 'blocked'
 
 const TONES: Record<Tone, string> = {
-  neutral: 'bg-paper-2 text-ink',
+  neutral: 'bg-accent-soft text-accent-ink',
   danger: 'bg-danger-soft text-danger',
   warning: 'bg-caution-soft text-caution',
   blocked: 'bg-closed-soft text-closed',

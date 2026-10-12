@@ -80,7 +80,7 @@ export function AboutPage() {
               <li key={section.id}>
                 <a
                   href={`#${section.id}`}
-                  className="-ml-px flex gap-2.5 border-l-2 border-transparent py-1.5 pl-3 text-sm text-ink-2 hover:border-ink hover:text-ink"
+                  className="-ml-px flex gap-2.5 border-l-2 border-transparent py-1.5 pl-3 text-sm text-ink-2 hover:border-accent hover:text-accent-ink"
                 >
                   <span className="num text-xs text-ink-3">
                     {String(index + 1).padStart(2, '0')}
@@ -98,7 +98,7 @@ export function AboutPage() {
             className="panel scroll-mt-20 p-6 lg:p-8"
             aria-labelledby="purpose-title"
           >
-            <p className="kicker">01 · Purpose</p>
+            <p className="kicker !text-accent-ink">01 · Purpose</p>
             <h2
               id="purpose-title"
               className="mt-2 text-2xl leading-tight font-bold tracking-tight lg:text-[30px]"
@@ -115,10 +115,10 @@ export function AboutPage() {
           </section>
 
           <Section id="how-it-works" number="02" title="How it works">
-            <ol className="relative mt-4 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-px before:bg-line-strong">
+            <ol className="relative mt-4 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-px before:bg-accent/30">
               {PIPELINE.map((step, index) => (
                 <li key={step.title} className="relative flex gap-4">
-                  <span className="num relative flex size-6 shrink-0 items-center justify-center rounded-[4px] bg-ink text-[11px] font-semibold text-white">
+                  <span className="num relative flex size-6 shrink-0 items-center justify-center rounded-[4px] bg-accent text-[11px] font-semibold text-white">
                     {index + 1}
                   </span>
                   <span>
@@ -197,7 +197,7 @@ function Section({
     <section id={id} className="panel scroll-mt-20 p-6" aria-labelledby={`${id}-title`}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 id={`${id}-title`} className="flex items-baseline gap-3 text-lg font-bold">
-          <span aria-hidden="true" className="kicker">
+          <span aria-hidden="true" className="kicker !text-accent-ink">
             {number}
           </span>
           {title}

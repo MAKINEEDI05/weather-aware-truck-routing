@@ -102,7 +102,10 @@ export function AppLayout() {
               {({ isActive }) => (
                 <>
                   {isActive && (
-                    <span aria-hidden="true" className="absolute inset-x-6 top-0 h-0.5 bg-white" />
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-x-6 top-0 h-[3px] rounded-b bg-accent-on-dark"
+                    />
                   )}
                   <Icon className="size-5" aria-hidden="true" />
                   {mobileLabel}
@@ -130,14 +133,17 @@ function BarLink({ item, step }: { item: NavItem; step?: number }) {
           {step !== undefined && (
             <span
               aria-hidden="true"
-              className={`font-mono text-[11px] ${isActive ? 'text-white/70' : 'text-fog/60'}`}
+              className={`font-mono text-[11px] ${isActive ? 'text-accent-on-dark' : 'text-fog/60'}`}
             >
               {String(step).padStart(2, '0')}
             </span>
           )}
           {item.label}
           {isActive && (
-            <span aria-hidden="true" className="absolute inset-x-3 bottom-0 h-[3px] bg-white" />
+            <span
+              aria-hidden="true"
+              className="absolute inset-x-3 bottom-0 h-[3px] rounded-t bg-accent-on-dark"
+            />
           )}
         </>
       )}

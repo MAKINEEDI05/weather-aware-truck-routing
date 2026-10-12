@@ -1,9 +1,10 @@
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'inverse' | 'outline-dark'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
-// Actions are drawn in ink, never in a risk or route colour.
+// Actions use the iris accent, never a risk or route colour.
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-ink text-white hover:bg-ink-2 disabled:bg-ink/40 disabled:hover:bg-ink/40',
+  primary:
+    'bg-accent text-white hover:bg-accent-strong disabled:bg-accent/40 disabled:hover:bg-accent/40',
   secondary:
     'border border-line-strong bg-surface text-ink hover:bg-paper disabled:text-ink-3 disabled:hover:bg-surface',
   ghost: 'text-ink hover:bg-paper-2 disabled:text-ink-3',

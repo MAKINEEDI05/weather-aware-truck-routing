@@ -116,7 +116,7 @@ export function CheckpointTable({
                   aria-selected={selected}
                   className={`cursor-pointer border-b border-line last:border-0 ${
                     selected
-                      ? 'bg-paper-2 shadow-[inset_3px_0_0_var(--color-ink)]'
+                      ? 'bg-accent-soft shadow-[inset_3px_0_0_var(--color-accent)]'
                       : 'hover:bg-paper'
                   }`}
                 >
@@ -129,7 +129,7 @@ export function CheckpointTable({
                       }}
                       aria-pressed={selected}
                       aria-label={`Mile ${formatMilepost(checkpoint.mile)}`}
-                      className="num font-semibold text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink"
+                      className="num font-semibold text-ink underline decoration-line-strong underline-offset-2 hover:decoration-accent"
                     >
                       {formatMilepost(checkpoint.mile)}
                     </button>

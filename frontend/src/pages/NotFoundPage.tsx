@@ -10,7 +10,7 @@ export function NotFoundPage() {
         {/* A route-marker sign: decorative. */}
         <div
           aria-hidden="true"
-          className="flex w-44 shrink-0 flex-col items-center rounded-xl border-[3px] border-white bg-ink px-4 pt-4 pb-5 text-white shadow-[0_0_0_3px_var(--color-ink)]"
+          className="flex w-44 shrink-0 flex-col items-center rounded-xl border-[3px] border-white bg-gradient-to-b from-accent to-sky px-4 pt-4 pb-5 text-white shadow-[0_0_0_3px_var(--color-accent)]"
         >
           <span className="font-mono text-[11px] tracking-[0.2em] text-white/70">NO ROUTE</span>
           <span className="num mt-1 text-6xl leading-none font-bold">404</span>

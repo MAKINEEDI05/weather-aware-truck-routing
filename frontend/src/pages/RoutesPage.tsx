@@ -96,7 +96,7 @@ function RouteComparison({ result }: { result: PlanResponse }) {
             </p>
             <Link
               to="/recommendation"
-              className="ml-auto text-[13px] font-semibold text-ink underline underline-offset-2"
+              className="ml-auto text-[13px] font-semibold text-accent-ink underline underline-offset-2"
             >
               Details
             </Link>
@@ -142,9 +142,9 @@ function RecommendationLine({ result }: { result: PlanResponse }) {
     return (
       <Link
         to="/recommendation"
-        className="group flex items-center gap-3 rounded-lg bg-ink px-4 py-3 text-sm text-white hover:bg-ink-2"
+        className="group flex items-center gap-3 rounded-lg bg-gradient-to-r from-[#12452a] to-[#1d6b42] px-4 py-3 text-sm text-white hover:from-[#0f3a23] hover:to-[#185c38]"
       >
-        <CircleCheck className="size-5 shrink-0 text-[#7fd09c]" aria-hidden="true" />
+        <CircleCheck className="size-5 shrink-0 text-[#bbf7d0]" aria-hidden="true" />
         {route && <RouteShield routeId={route.id} size="sm" />}
         <span className="min-w-0 flex-1">
           <span className="font-bold">{route?.label} recommended</span>

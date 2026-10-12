@@ -233,7 +233,10 @@ export function TripForm({ onPlanned }: TripFormProps) {
             ) : (
               <>
                 These inputs match the current results.{' '}
-                <Link to="/routes" className="font-semibold text-ink underline underline-offset-2">
+                <Link
+                  to="/routes"
+                  className="font-semibold text-accent-ink underline underline-offset-2"
+                >
                   View routes
                 </Link>
               </>
@@ -283,7 +286,7 @@ function Section({
   return (
     <div className="border-t border-line py-5 first:border-t-0 first:pt-0">
       <p className="mb-3 flex items-center gap-2 text-[13px] font-bold text-ink" aria-hidden="true">
-        <span className="num flex size-5 items-center justify-center rounded-[4px] bg-ink text-[11px] text-white">
+        <span className="num flex size-5 items-center justify-center rounded-[4px] bg-accent text-[11px] text-white">
           {number}
         </span>
         {title}
@@ -317,7 +320,7 @@ function LoadBands({ load }: { load: number | null }) {
           <span
             key={band.label}
             className={`h-1.5 first:rounded-l-full last:rounded-r-full ${
-              index === active ? 'bg-ink' : 'bg-paper-2'
+              index === active ? 'bg-accent' : 'bg-paper-2'
             }`}
           />
         ))}
@@ -363,7 +366,7 @@ function IntervalOption({ interval, checked, disabled, onSelect }: IntervalOptio
       />
       <label
         htmlFor={id}
-        className="flex h-16 cursor-pointer flex-col justify-between rounded-md border border-line-strong bg-surface px-3 pt-2 pb-2.5 text-ink-2 transition-colors peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-signal peer-disabled:cursor-not-allowed hover:border-ink"
+        className="flex h-16 cursor-pointer flex-col justify-between rounded-md border border-line-strong bg-surface px-3 pt-2 pb-2.5 text-ink-2 transition-colors peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-signal peer-disabled:cursor-not-allowed hover:border-accent"
       >
         <span className="num text-sm font-semibold">{interval} mi</span>
         <span aria-hidden="true" className="flex items-end justify-between">

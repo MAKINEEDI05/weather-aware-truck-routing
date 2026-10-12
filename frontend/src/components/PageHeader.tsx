@@ -47,9 +47,9 @@ export function PageHeader({
   }
 
   return (
-    <header className="border-b border-line bg-surface">
+    <header className="header-band border-b border-line">
       <div className="mx-auto max-w-[1440px] px-4 pt-6 pb-5 lg:px-8 lg:pt-8 lg:pb-6">
-        {kicker && <p className="kicker">{kicker}</p>}
+        {kicker && <p className="kicker !text-accent-ink">{kicker}</p>}
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className="text-[26px] leading-tight font-bold tracking-tight lg:text-[32px]">
             {title}

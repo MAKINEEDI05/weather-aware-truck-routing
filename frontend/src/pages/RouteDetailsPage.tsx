@@ -110,7 +110,7 @@ function RouteDetails({ result, route }: { result: PlanResponse; route: Route })
                 aria-current={r.id === route.id ? 'page' : undefined}
                 className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold whitespace-nowrap ${
                   r.id === route.id
-                    ? 'bg-ink text-white'
+                    ? 'bg-accent text-white'
                     : 'text-ink-2 hover:bg-paper hover:text-ink'
                 }`}
               >

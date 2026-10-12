@@ -18,7 +18,7 @@ export function ComparisonTable({ result }: { result: PlanResponse }) {
         </h2>
         <p className="text-[13px] text-ink-3">
           Columns 1–4 follow the ranking priority.
-          {recommended ? ` A dark cell marks where a route lost to ${recommended.label}.` : ''}
+          {recommended ? ` A filled cell marks where a route lost to ${recommended.label}.` : ''}
         </p>
       </div>
       {/* relative: keeps sr-only (absolute) labels inside the scroll area on narrow screens */}
@@ -61,7 +61,7 @@ export function ComparisonTable({ result }: { result: PlanResponse }) {
                   : null
               const cell = (key: string) =>
                 `num px-3 py-3 text-right text-[13px] ${
-                  lostOn === key ? 'bg-ink font-semibold text-white' : 'text-ink'
+                  lostOn === key ? 'bg-accent font-semibold text-white' : 'text-ink'
                 }`
               const marker = (key: string) =>
                 lostOn === key ? <span className="sr-only"> (deciding difference)</span> : null

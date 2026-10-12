@@ -11,9 +11,9 @@
 
 /*
  * "Route sheet" design tokens.
- * Principle: colour means data. The interface is drawn in asphalt, ink and paper; hue is reserved
- * for risk levels (src/lib/risk.ts) and route identity (src/lib/routes.ts). Signal blue is used
- * only for keyboard focus.
+ * Two colour families that never overlap: the warm risk ramp (src/lib/risk.ts: green → yellow →
+ * orange → red → plum) is data; the cool night-sky family (indigo chrome, iris accent, azure) is the
+ * interface — actions, selection, focus and brand. Nothing in the interface uses a risk hue.
  * Type: Overpass descends from Highway Gothic, the lettering of US road signs. Every measurement
  * is set in Overpass Mono so figures align and read like instruments.
  */
@@ -32,13 +32,21 @@
   --color-ink-2: #454951;
   --color-ink-3: #62666e;
 
-  --color-asphalt: #121418;
-  --color-asphalt-2: #1b1e24;
-  --color-asphalt-3: #2a2e36;
-  --color-fog: #a9aeb8;
+  --color-asphalt: #14152b;
+  --color-asphalt-2: #1d1f3a;
+  --color-asphalt-3: #2e3156;
+  --color-fog: #aeb0c8;
 
-  --color-signal: #2f62f5;
-  --color-signal-on-dark: #8eaeff;
+  /* Interface accent: iris. Actions, selection and focus. */
+  --color-accent: #5146e5;
+  --color-accent-strong: #3f34c9;
+  --color-accent-soft: #eeedff;
+  --color-accent-ink: #3b31b8;
+  --color-accent-on-dark: #a9a4ff;
+  --color-sky: #1c74d4;
+
+  --color-signal: #5146e5;
+  --color-signal-on-dark: #a9a4ff;
 
   /* System states (not risk levels). */
   --color-danger: #9b231a;
@@ -146,8 +154,8 @@
   }
 
   .field:focus-within {
-    border-color: var(--color-ink);
-    box-shadow: 0 0 0 1px var(--color-ink);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
   }
 
   .field[data-invalid='true'] {
@@ -183,11 +191,32 @@
     );
   }
 
+  /* Page title band: a pale dawn sky. */
+  .header-band {
+    background-image: linear-gradient(100deg, #eeedff 0%, #f1f5ff 45%, #ffffff 100%);
+  }
+
+  /* Landing hero: night sky with a radar-like glow. */
+  .aurora {
+    background-color: var(--color-asphalt);
+    background-image:
+      radial-gradient(60% 70% at 85% 20%, rgb(81 70 229 / 0.45), transparent 70%),
+      radial-gradient(50% 60% at 10% 90%, rgb(28 116 212 / 0.35), transparent 70%),
+      radial-gradient(40% 40% at 55% 55%, rgb(15 118 133 / 0.25), transparent 70%);
+  }
+
+  .text-sky-gradient {
+    background-image: linear-gradient(90deg, #a9a4ff, #7cc4ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   /* Moving lane markings for indeterminate waits. */
   .lane-dashes {
     background-image: repeating-linear-gradient(
       90deg,
-      var(--color-ink) 0 16px,
+      var(--color-accent) 0 16px,
       transparent 16px 28px
     );
     background-size: 28px 100%;
@@ -227,7 +256,7 @@
   margin-top: -10px;
   border-radius: 4px;
   border: 2px solid var(--color-surface);
-  background: var(--color-ink);
+  background: var(--color-accent);
   box-shadow: 0 1px 3px rgb(18 20 24 / 0.35);
 }
 
@@ -236,7 +265,7 @@
   height: 20px;
   border-radius: 4px;
   border: 2px solid var(--color-surface);
-  background: var(--color-ink);
+  background: var(--color-accent);
   box-shadow: 0 1px 3px rgb(18 20 24 / 0.35);
 }
 
@@ -261,12 +290,12 @@
 .leaflet-container {
   font: inherit;
   z-index: 0;
-  background: #e4e2dc;
+  background: #e3e6ee;
 }
 
-/* The basemap is context, not data: grey it out so risk colours carry the map. */
+/* The basemap is context, not data: a cool blue-grey so warm risk colours carry the map. */
 .trip-map .leaflet-tile-pane {
-  filter: grayscale(1) sepia(0.1) contrast(0.92) brightness(1.04);
+  filter: grayscale(1) sepia(0.3) hue-rotate(185deg) saturate(0.6) contrast(0.92) brightness(1.04);
 }
 
 .leaflet-bar {
@@ -328,7 +357,7 @@
 }
 
 .map-shield--selected {
-  outline: 2px solid var(--color-ink);
+  outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
 

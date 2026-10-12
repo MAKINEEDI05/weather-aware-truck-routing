@@ -89,7 +89,7 @@ export function RankingList({
             layout === 'row' ? 'rounded-md border border-line px-3 py-2.5' : compact ? '' : 'py-2.5'
           }`}
         >
-          <span className="num flex size-6 shrink-0 items-center justify-center rounded-[4px] border border-ink text-xs font-semibold text-ink">
+          <span className="num flex size-6 shrink-0 items-center justify-center rounded-[4px] bg-accent-soft text-xs font-semibold text-accent-ink">
             {index + 1}
           </span>
           <span className="text-sm font-semibold text-ink">{criterion}</span>

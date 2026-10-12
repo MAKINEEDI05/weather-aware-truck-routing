@@ -154,7 +154,7 @@ export function LocationSearch({
           {label}
         </p>
         <div
-          className="flex min-h-11 items-center gap-3 rounded-md border border-ink bg-surface py-2 pr-1.5 pl-3"
+          className="flex min-h-11 items-center gap-3 rounded-md border border-accent/60 bg-accent-soft/50 py-2 pr-1.5 pl-3"
           aria-labelledby={`${id}-label`}
           role="group"
         >
@@ -172,7 +172,7 @@ export function LocationSearch({
             type="button"
             onClick={change}
             disabled={disabled}
-            className={buttonClass('ghost', 'sm', 'underline underline-offset-2')}
+            className={buttonClass('ghost', 'sm', '!text-accent-ink underline underline-offset-2')}
             aria-label={`Change ${label.toLowerCase()}`}
             id={inputId}
           >
@@ -285,7 +285,7 @@ export function LocationSearch({
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="w-full border-t border-line px-3 py-2 text-left text-[13px] font-semibold text-ink underline underline-offset-2 hover:bg-paper"
+              className="w-full border-t border-line px-3 py-2 text-left text-[13px] font-semibold text-accent-ink underline underline-offset-2 hover:bg-paper"
             >
               Show {results.length - VISIBLE_RESULTS} more
             </button>

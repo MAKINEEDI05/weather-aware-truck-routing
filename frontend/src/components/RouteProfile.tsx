@@ -97,8 +97,8 @@ export function RouteProfile({
             className="pointer-events-none absolute -top-2 -bottom-1 flex -translate-x-1/2 flex-col items-center"
             style={{ left: `${caret * 100}%` }}
           >
-            <span className="size-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-ink" />
-            <span className="w-0.5 flex-1 bg-ink" />
+            <span className="size-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-accent" />
+            <span className="w-0.5 flex-1 bg-accent" />
           </span>
         )}
       </div>

@@ -3,8 +3,8 @@ import type { PlanResponse, Route } from '../api/types'
 // Route identity: deep, cool and desaturated so route lines recede behind the risk colours. None of
 // them is close to a risk hue. Identity is always carried by the route letter as well.
 const ROUTE_COLORS: Record<string, string> = {
-  A: '#3557c2',
-  B: '#1f7f8f',
+  A: '#1c74d4',
+  B: '#0f7685',
   C: '#23262b',
   D: '#5f7fa8',
   E: '#4b5563',

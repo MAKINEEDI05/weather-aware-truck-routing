@@ -88,16 +88,16 @@ function RecommendedCard({ result }: { result: PlanResponse }) {
 
   return (
     <section className="panel overflow-hidden" aria-labelledby="recommended-title">
-      <div className="on-dark bg-ink px-5 py-5 text-white lg:px-6">
+      <div className="on-dark bg-gradient-to-r from-[#12452a] via-[#185c38] to-[#1d6b42] px-5 py-5 text-white lg:px-6">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] text-[#9fdcb4] uppercase">
+          <div className="min-w-0 flex-[1_1_14rem]">
+            <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] text-[#bbf7d0] uppercase">
               <CircleCheck className="size-4" aria-hidden="true" />
               Recommended route
             </p>
             <h2
               id="recommended-title"
-              className="mt-2 flex items-center gap-3 text-3xl leading-none font-bold tracking-tight"
+              className="mt-2 flex items-center gap-3 text-3xl leading-none font-bold tracking-tight whitespace-nowrap"
             >
               <RouteShield routeId={route.id} size="lg" />
               {route.label}
@@ -290,7 +290,7 @@ function WhyNotCards({ result }: { result: PlanResponse }) {
             </p>
             <Link
               to={`/routes/${other.id}`}
-              className="mt-3 inline-block text-[13px] font-semibold text-ink underline underline-offset-2"
+              className="mt-3 inline-block text-[13px] font-semibold text-accent-ink underline underline-offset-2"
             >
               Inspect {other.label}
             </Link>
@@ -310,7 +310,7 @@ function GateMarks({ decided, blocked }: { decided: number; blocked: boolean }) 
           key={criterion.key}
           className={`num flex size-5 items-center justify-center rounded-[4px] border text-[10px] font-semibold ${
             index === decided
-              ? 'border-ink bg-ink text-white'
+              ? 'border-accent bg-accent text-white'
               : index < decided
                 ? 'border-line-strong bg-paper text-ink-2'
                 : 'border-dashed border-line-strong text-ink-3'
