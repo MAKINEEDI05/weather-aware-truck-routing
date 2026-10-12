@@ -1,12 +1,10 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import App from './App'
 import { HEALTH_TIMEOUT_MS } from './api/useApiHealth'
-
-// Leaflet needs a real layout engine; the map is covered by manual checks, not jsdom.
-vi.mock('./features/map/TripMap', () => ({
-  TripMap: () => <div data-testid="trip-map" />,
-}))
+import { makePlanResponse } from './test/fixtures'
+import { mockApi, renderApp } from './test/utils'
 
 function healthResponse(): Response {
   return new Response(JSON.stringify({ status: 'ok', version: '0.1.0' }), {
@@ -19,11 +17,19 @@ beforeEach(() => {
   vi.stubEnv('VITE_API_BASE_URL', 'http://api.test/api/v1')
 })
 
+function renderAt(path = '/plan') {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <App />
+    </MemoryRouter>,
+  )
+}
+
 describe('App backend connection status', () => {
   it('shows checking, then ok with the backend version', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(healthResponse()))
 
-    render(<App />)
+    renderAt()
 
     expect(screen.getByRole('status')).toHaveTextContent('API: checking…')
     expect(await screen.findByText('API: ok')).toBeInTheDocument()
@@ -35,7 +41,7 @@ describe('App backend connection status', () => {
   it('shows unreachable with an explanation when the request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
 
-    render(<App />)
+    renderAt()
 
     expect(await screen.findByText('API: unreachable')).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent('The backend could not be reached.')
@@ -44,7 +50,7 @@ describe('App backend connection status', () => {
   it('shows the HTTP status when the backend returns an error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 500 })))
 
-    render(<App />)
+    renderAt()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('HTTP 500')
     expect(screen.getByRole('status')).toHaveTextContent('API: unreachable')
@@ -58,7 +64,7 @@ describe('App backend connection status', () => {
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
 
-    render(<App />)
+    renderAt()
     await user.click(await screen.findByRole('button', { name: 'Retry' }))
 
     expect(await screen.findByText('API: ok')).toBeInTheDocument()
@@ -81,7 +87,7 @@ describe('App backend connection status', () => {
         ),
       )
 
-      render(<App />)
+      renderAt()
       await act(async () => {
         await vi.advanceTimersByTimeAsync(HEALTH_TIMEOUT_MS)
       })
@@ -95,18 +101,88 @@ describe('App backend connection status', () => {
 })
 
 describe('App shell', () => {
-  it('renders the planner panel and the map region', async () => {
+  it('renders the planner with the trip form and the map preview', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(healthResponse()))
 
-    render(<App />)
+    renderAt()
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Plan a trip' })).toBeInTheDocument()
+    expect(screen.getByRole('form', { name: 'Trip details' })).toBeInTheDocument()
+    expect(screen.getByTestId('map')).toHaveAccessibleName('Map preview of the selected places')
+    await screen.findByText('API: ok')
+  })
+})
+
+describe('Navigation', () => {
+  it('goes from the landing page to the trip planner', async () => {
+    mockApi()
+    const user = userEvent.setup()
+    renderApp('/')
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Weather-Aware Truck Routing' }),
+      screen.getByRole('heading', { level: 1, name: /choose the safest route/i }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Enter a trip to compare routes.')).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Map' })).toContainElement(
-      screen.getByTestId('trip-map'),
+    expect(screen.getByTestId('hero-fallback')).toBeInTheDocument()
+    await user.click(screen.getAllByRole('link', { name: /plan your trip/i })[0]!)
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Plan a trip' })).toBeInTheDocument()
+  })
+
+  it('moves between workspace pages with the sidebar', async () => {
+    mockApi()
+    const user = userEvent.setup()
+    renderApp('/plan', { result: makePlanResponse() })
+    const sidebar = screen.getByRole('navigation', { name: 'Primary' })
+
+    await user.click(within(sidebar).getByRole('link', { name: 'Routes' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Route comparison' })).toBeInTheDocument()
+
+    await user.click(within(sidebar).getByRole('link', { name: 'Recommendation' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Recommendation' })).toBeInTheDocument()
+
+    await user.click(within(sidebar).getByRole('link', { name: 'Weather heatmap' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Weather heatmap' })).toBeInTheDocument()
+
+    await user.click(within(sidebar).getByRole('link', { name: 'About' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'About' })).toBeInTheDocument()
+    expect(within(sidebar).getByRole('link', { name: 'About' })).toHaveAttribute(
+      'aria-current',
+      'page',
     )
-    await screen.findByText('API: ok')
+  })
+
+  it('has a four-tab mobile navigation', () => {
+    mockApi()
+    renderApp('/plan')
+
+    const tabs = within(screen.getByRole('navigation', { name: 'Primary mobile' })).getAllByRole(
+      'link',
+    )
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Plan', 'Routes', 'Heatmap', 'About'])
+  })
+
+  it('shows the empty state on result pages before a trip is planned', () => {
+    mockApi()
+    renderApp('/heatmap')
+
+    expect(screen.getByRole('heading', { name: 'No trip planned yet' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Plan a trip' })).toHaveAttribute('href', '/plan')
+  })
+
+  it('shows a not-found page for unknown paths', () => {
+    mockApi()
+    renderApp('/nowhere')
+
+    expect(screen.getByRole('heading', { name: 'This page does not exist' })).toBeInTheDocument()
+  })
+
+  it('shows the About page with the assessment rules', () => {
+    mockApi()
+    renderApp('/about#risk-rules')
+
+    expect(
+      screen.getByRole('table', { name: 'Risk thresholds per checkpoint' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/React 19/)).toBeInTheDocument()
   })
 })

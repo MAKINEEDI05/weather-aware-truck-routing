@@ -2,12 +2,13 @@
 
 > Single source of truth for understanding, designing, implementing, testing and delivering the Spotter **Full Stack Developer — Weather-Aware Truck Routing** assessment.
 >
-> **Status:** Planning document. Nothing described here is implemented, tested, deployed or measured yet. Every schema, file, component and target below is a *proposal* until the corresponding phase is completed and verified with evidence.
+> **Status (v1.2):** Original planning document, kept for its reasoning. Where it differs from the maintained specifications in [`docs/`](docs/) — [`REQUIREMENTS.md`](docs/REQUIREMENTS.md), [`ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`API_CONTRACT.md`](docs/API_CONTRACT.md), [`TEST_PLAN.md`](docs/TEST_PLAN.md), [`DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md), [`IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md), [`DECISIONS.md`](docs/DECISIONS.md) — **the `docs/` files win**. Progress is tracked in [`TASKS.md`](TASKS.md).
 
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-10-12 | Initial blueprint |
 | 1.1 | 2026-10-12 | Review revision: ranking now matches the PDF exactly, No Travel moved to a separate eligibility policy, fallback routes made conditional on evidence, checkpoint snapping removed, provider claims re-verified, request volume and complexity reduced |
+| 1.2 | 2026-10-12 | Implementation started. Maintained specs moved to `docs/`. Superseded here: §6.1 single page → multi-page router (DEC-29); route/No Travel colours (DEC-30); departure window grace (DEC-31); `ROUTING_NOT_CONFIGURED` (DEC-32); corridor tiers 0.25/0.5/1.0° (DEC-34); module `eta.py` → `profile.py`; React 19 / Django 5.2 (DEC-44); no database (DEC-45); health on `/api/v1/health/` and `/api/health/` (DEC-43). See `docs/DECISIONS.md`. |
 
 ### Labels used throughout
 
@@ -463,10 +464,10 @@ Every item maps to a requirement; nothing is added "just in case".
 
 | Technology | Purpose | Why | Alternatives considered | Limitations / notes |
 |---|---|---|---|---|
-| React 18 + TypeScript | UI | [PDF] React; typed API models | Plain JS | — |
+| React 19 + TypeScript 6 | UI | [PDF] React; typed API models | Plain JS | Updated from React 18 in Phase 1 (DEC-44) |
 | Vite | Dev server / build | Simple, standard | Next.js (SSR not needed) | `VITE_API_BASE_URL` |
 | Tailwind CSS | Styling | Fast responsive layout | CSS modules | Version pinned at setup [UNVERIFIED v4 plugin setup — Phase 3] |
-| Leaflet 1.9 + React Leaflet | Map | Canvas renderer, no key | MapLibre GL (heavier) | React Leaflet 5 is expected to require React 19, so 4.x for React 18 [UNVERIFIED — Phase 3] |
+| Leaflet 1.9 + React Leaflet 5 | Map | Canvas renderer, no key | MapLibre GL (heavier) | React Leaflet 5 requires React 19 (verified in Phase 1) |
 | Django 5 + DRF | API | [PDF] Django; serializers give validation | — | No auth, no admin, no models |
 | requests | HTTP client | Simple, easy to mock | httpx | Sync; parallel weather batches via `concurrent.futures` (stdlib) |
 | django-cors-headers | CORS | Standard | Hand-written middleware | Exact origin allowlist |
@@ -600,7 +601,7 @@ Behaviour only; no code here.
 
 ### 6.1 Page and layout
 
-Single page, no router. Desktop (≥ 1024 px): left panel ~400 px (form → recommendation → route cards → checkpoint table), map fills the rest, slider docked at the bottom of the map. Mobile (< 640 px): stacked — form, map (60 vh) with slider, recommendation, route cards, table; after a successful plan the form collapses to a one-line summary with "Edit".
+**Superseded by DEC-29:** multi-page SPA with a router (see `docs/ARCHITECTURE.md` §3, `docs/DESIGN_SYSTEM.md` §5). Original text: Single page, no router. Desktop (≥ 1024 px): left panel ~400 px (form → recommendation → route cards → checkpoint table), map fills the rest, slider docked at the bottom of the map. Mobile (< 640 px): stacked — form, map (60 vh) with slider, recommendation, route cards, table; after a successful plan the form collapses to a one-line summary with "Edit".
 
 ### 6.2 Components
 

@@ -10,12 +10,30 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Long-lived vendor chunks cache independently of app code.
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react',
+              test: /node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/,
+            },
+            { name: 'map', test: /node_modules[\\/](leaflet|react-leaflet|@react-leaflet)[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     restoreMocks: true,
+    // Deterministic date formatting in tests (CDT/CST, like the design references).
+    env: { TZ: 'America/Chicago' },
     unstubEnvs: true,
     unstubGlobals: true,
   },
