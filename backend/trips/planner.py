@@ -46,10 +46,21 @@ def weather_window(
     return start, end
 
 
-RATE_LIMIT_HINT = (
-    " The free weather service's per-minute limit was reached: wait about a minute and plan again."
-    " Forecasts already fetched are cached, so the retry only requests the missing points."
-)
+def rate_limit_hint(reason: str) -> str:
+    """Advice for an Open-Meteo 429, based on the provider's own reason (never assumed)."""
+    said = f' Open-Meteo said: "{reason}"' if reason else ""
+    lowered = reason.lower()
+    if "minute" in lowered:
+        advice = " Wait about a minute and plan again; forecasts already fetched are cached."
+    elif "hour" in lowered:
+        advice = " Try again later this hour."
+    elif "daily" in lowered or "tomorrow" in lowered:
+        advice = " Its free daily quota for this server is used up; try again tomorrow."
+    else:
+        advice = " Try again later."
+    return (
+        " The free weather service refused requests from this server (rate limit)." + said + advice
+    )
 
 
 def weather_warnings(
@@ -57,7 +68,9 @@ def weather_warnings(
 ) -> list[Warning]:
     """Separate warnings for checkpoint weather (drives the ranking) and heatmap cells."""
     found: list[Warning] = []
-    hint = RATE_LIMIT_HINT if checkpoints.rate_limited or cells.rate_limited else ""
+    limited = checkpoints.rate_limited or cells.rate_limited
+    reason = checkpoints.rate_limit_reason or cells.rate_limit_reason
+    hint = rate_limit_hint(reason) if limited else ""
     if checkpoints.failed_count and checkpoints.failed_count >= checkpoints.location_count:
         found.append(
             Warning(
@@ -125,10 +138,14 @@ def plan_trip(command: PlanCommand, *, now: datetime | None = None) -> PlanResul
     latest_arrival = max(departure + timedelta(seconds=p.total_time_s) for p in profiles)
     start, end = weather_window(departure, latest_arrival)
     # Checkpoints drive the recommendation, so they are fetched before the heatmap cells: if the
-    # provider's per-minute limit is reached, the cells are what goes missing (VF-11).
+    # provider's rate limit is reached, the cells are what goes missing (VF-11). Once checkpoints
+    # were refused with HTTP 429, cell requests would be refused too, so only cached cells are
+    # used instead of sending more requests (VF-17).
     checkpoint_points = [pl.point for route in placements for pl in route]
     checkpoint_weather = open_meteo.fetch_hourly(checkpoint_points, start, end)
-    cell_weather = open_meteo.fetch_hourly(centres, start, end)
+    cell_weather = open_meteo.fetch_hourly(
+        centres, start, end, network=not checkpoint_weather.rate_limited
+    )
     series = {**cell_weather.series, **checkpoint_weather.series}
     warnings.extend(weather_warnings(checkpoint_weather, cell_weather))
 

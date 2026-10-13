@@ -54,6 +54,8 @@ class WeatherFetch:
     cache_hits: int
     # True when at least one batch was refused by the provider's rate limit (HTTP 429).
     rate_limited: bool = False
+    # Open-Meteo's own 429 reason, e.g. "Daily API request limit exceeded. ...", if it gave one.
+    rate_limit_reason: str = ""
 
 
 class _BatchError(Exception):
@@ -71,7 +73,9 @@ def fetch_hourly(
     *,
     batch_size: int | None = None,
     cache_ttl_s: int | None = None,
+    network: bool = True,
 ) -> WeatherFetch:
+    """Hourly series per location. With `network=False` only cached series are returned."""
     start_utc, end_utc = require_utc(start_utc), require_utc(end_utc)
     start_epoch, end_epoch = to_epoch(start_utc), to_epoch(end_utc)
     batch_size = batch_size or settings.WEATHER_BATCH_SIZE
@@ -91,12 +95,18 @@ def fetch_hourly(
     batches = [missing[i : i + batch_size] for i in range(0, len(missing), batch_size)]
     failed = 0
     rate_limited = False
+    rate_limit_reason = ""
+    if not network:
+        failed = len(missing)
+        results.update(dict.fromkeys(missing))
+        batches = []
     if batches:
         workers = min(MAX_IN_FLIGHT, len(batches))
         with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="open-meteo") as pool:
             outcomes = list(pool.map(lambda b: _fetch_batch(b, start_utc, end_utc), batches))
-        for batch, (outcome, limited) in zip(batches, outcomes, strict=True):
+        for batch, (outcome, limited, reason) in zip(batches, outcomes, strict=True):
             rate_limited = rate_limited or limited
+            rate_limit_reason = rate_limit_reason or reason
             if outcome is None:
                 failed += len(batch)
                 results.update(dict.fromkeys(batch))
@@ -113,13 +123,15 @@ def fetch_hourly(
         request_count=len(batches),
         cache_hits=cache_hits,
         rate_limited=rate_limited,
+        rate_limit_reason=rate_limit_reason,
     )
 
 
 def _fetch_batch(
     batch: list[LatLon], start_utc: datetime, end_utc: datetime
-) -> tuple[list[HourlySeries] | None, bool]:
-    """Parsed series for the batch (or None if it failed) and whether it was rate-limited."""
+) -> tuple[list[HourlySeries] | None, bool, str]:
+    """Parsed series (or None if the batch failed), whether it was rate-limited, and the
+    provider's rate-limit reason."""
     params = {
         "latitude": ",".join(f"{p.lat:.6f}" for p in batch),
         "longitude": ",".join(f"{p.lon:.6f}" for p in batch),
@@ -140,15 +152,17 @@ def _fetch_batch(
             timeout=TIMEOUT,
             retry_statuses=RETRY_STATUSES,
         )
-        return parse_forecast(data, batch), False
+        return parse_forecast(data, batch), False, ""
     except (ProviderError, _BatchError) as exc:
+        limited = isinstance(exc, ProviderRateLimited)
         logger.warning(
-            "provider=%s op=forecast batch_failed locations=%d reason=%s",
+            "provider=%s op=forecast batch_failed locations=%d reason=%s retry_after_s=%s",
             PROVIDER,
             len(batch),
             exc,
+            exc.retry_after_s if limited else None,
         )
-        return None, isinstance(exc, ProviderRateLimited)
+        return None, limited, exc.detail if limited else ""
 
 
 def _number(value: Any) -> float | None:

@@ -216,6 +216,12 @@ and set `VITE_API_BASE_URL=https://<backend-host>/api/v1` at build time. SPA rew
 
 ## Known limitations
 
+- **Weather on the hosted backend (2026-10-13):** Open-Meteo refuses every forecast request from the
+  Render deployment with HTTP 429, even for a two-request trip, while the same requests work
+  locally (VF-17). Open-Meteo's free limits are per IP and Render's outbound IPs are shared by all
+  services in a region, so the quota is most likely used up by other tenants. The app degrades as
+  designed (routes shown, checkpoints Unknown, no recommendation). After deploying DEC-58, the
+  warning and the Render log quote Open-Meteo's exact reason; the fix depends on which limit it names.
 - ETAs assume continuous driving, so ETAs on long trips are optimistic.
 - Forecasts are predictions for a model grid cell, which can be a few km from the road.
 - When TomTom returns fewer than 3 routes, only those are shown, with a warning. The live evidence

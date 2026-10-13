@@ -28,7 +28,8 @@ def windy_near_salina(point: LatLon) -> tuple[float, float, float]:
 
 class FakeWeather:
     """Fake `open_meteo.fetch_hourly`. `fail_calls` fails every location of those call indexes
-    (0 = checkpoints, 1 = heatmap cells); `rate_limited` marks failures as HTTP 429."""
+    (0 = checkpoints, 1 = heatmap cells); `rate_limited` marks failures as HTTP 429 with
+    `rate_limit_reason`. A call with `network=False` is cache-only: every location is missing."""
 
     def __init__(
         self,
@@ -36,25 +37,35 @@ class FakeWeather:
         fail: Callable[[LatLon], bool] | None = None,
         fail_calls: tuple[int, ...] = (),
         rate_limited: bool = False,
+        rate_limit_reason: str = "",
     ):
         self.rule = rule
         self.fail = fail or (lambda _: False)
         self.fail_calls = fail_calls
         self.rate_limited = rate_limited
+        self.rate_limit_reason = rate_limit_reason
         self.calls: list[tuple[int, datetime, datetime]] = []
+        self.network: list[bool] = []
 
     def __call__(
-        self, locations: Sequence[LatLon], start: datetime, end: datetime, **_: Any
+        self,
+        locations: Sequence[LatLon],
+        start: datetime,
+        end: datetime,
+        *,
+        network: bool = True,
+        **_: Any,
     ) -> open_meteo.WeatherFetch:
         unique = list(dict.fromkeys(locations))
         call_index = len(self.calls)
         self.calls.append((len(unique), start, end))
+        self.network.append(network)
         hours = int((end - start).total_seconds() // 3600) + 1
         epoch0 = int(start.timestamp())
         series: dict[LatLon, HourlySeries | None] = {}
         failed = 0
         for point in unique:
-            failing = call_index in self.fail_calls or self.fail(point)
+            failing = not network or call_index in self.fail_calls or self.fail(point)
             values = None if failing else self.rule(point)
             if values is None:
                 series[point] = None
@@ -73,9 +84,10 @@ class FakeWeather:
             series=series,
             location_count=len(unique),
             failed_count=failed,
-            request_count=1,
+            request_count=1 if network else 0,
             cache_hits=0,
-            rate_limited=self.rate_limited and failed > 0,
+            rate_limited=network and self.rate_limited and failed > 0,
+            rate_limit_reason=self.rate_limit_reason if network and failed else "",
         )
 
 

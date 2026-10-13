@@ -11,12 +11,15 @@ class ProviderError(Exception):
         *,
         status: int | None = None,
         retry_after_s: int | None = None,
+        detail: str = "",
     ) -> None:
         super().__init__(message)
         self.provider = provider
         self.message = message
         self.status = status
         self.retry_after_s = retry_after_s
+        # The provider's own explanation (e.g. Open-Meteo's 429 "reason"), redacted and key-free.
+        self.detail = detail
 
 
 class ProviderNotConfigured(ProviderError):

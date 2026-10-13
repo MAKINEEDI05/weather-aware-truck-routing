@@ -213,6 +213,32 @@ def test_rate_limit_is_not_retried_and_is_reported(open_meteo_recorded) -> None:
     assert len(responses.calls) == 1
     assert result.failed_count == 3
     assert result.rate_limited is True
+    assert result.rate_limit_reason == "Minutely API request limit exceeded."
+
+
+@responses.activate
+def test_rate_limit_reason_is_logged(open_meteo_recorded, caplog) -> None:
+    reason = "Daily API request limit exceeded. Please try again tomorrow."
+    responses.get(open_meteo.BASE_URL, status=429, json={"error": True, "reason": reason})
+
+    with caplog.at_level("WARNING", logger="trips.providers"):
+        open_meteo.fetch_hourly(RECORDED_POINTS, START, END)
+
+    assert any(reason in record.getMessage() for record in caplog.records)
+
+
+@responses.activate
+def test_cache_only_mode_makes_no_request(open_meteo_recorded) -> None:
+    responses.get(open_meteo.BASE_URL, json=open_meteo_recorded[0])
+    open_meteo.fetch_hourly(RECORDED_POINTS[:1], START, END)  # caches the first point
+
+    result = open_meteo.fetch_hourly(RECORDED_POINTS, START, END, network=False)
+
+    assert len(responses.calls) == 1
+    assert result.cache_hits == 1
+    assert result.failed_count == 2
+    assert result.series[RECORDED_POINTS[0]] is not None
+    assert result.series[RECORDED_POINTS[1]] is None
 
 
 @responses.activate

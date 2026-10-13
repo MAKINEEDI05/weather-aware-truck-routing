@@ -97,11 +97,15 @@ def _error_for_status(provider: str, response: requests.Response) -> ProviderErr
     if status in (401, 403):
         return ProviderAuthError(provider, f"{provider} rejected the API key.", status=status)
     if status == 429:
+        # Keep the provider's reason: it says which limit was hit (e.g. Open-Meteo's
+        # "Daily API request limit exceeded. Please try again tomorrow.").
+        detail = _provider_detail(response)
         return ProviderRateLimited(
             provider,
-            f"{provider} rate limit reached.",
+            f"{provider} rate limit reached" + (f": {detail}" if detail else "."),
             status=status,
             retry_after_s=_retry_after(response),
+            detail=detail,
         )
     if 400 <= status < 500:
         detail = _provider_detail(response)

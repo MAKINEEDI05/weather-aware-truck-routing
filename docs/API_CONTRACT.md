@@ -236,8 +236,8 @@ The validation rules are in [`REQUIREMENTS.md` §5](REQUIREMENTS.md#5-input-vali
 
 Open-Meteo failures never fail the request. They return 200 with UNKNOWN checkpoints/cells and the
 warnings `WEATHER_PARTIAL` / `WEATHER_UNAVAILABLE` (checkpoints) and/or `CORRIDOR_WEATHER_PARTIAL`
-(heatmap cells). When the provider's per-minute limit caused the failure, the message says to wait
-about a minute and plan again.
+(heatmap cells). When the provider's rate limit caused the failure, the message quotes Open-Meteo's
+reason and gives matching advice (DEC-58), and heatmap cells are served from cache only.
 
 ## 6. Frontend types
 

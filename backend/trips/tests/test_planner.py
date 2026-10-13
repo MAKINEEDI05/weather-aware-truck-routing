@@ -176,20 +176,66 @@ def test_missing_heatmap_cells_do_not_mark_checkpoints_partial(monkeypatch) -> N
 
     assert result.recommendation.status is RecommendationStatus.RECOMMENDED
     assert weather_codes(result) == ["CORRIDOR_WEATHER_PARTIAL"]
-    assert "per-minute limit" in weather_message(result, "CORRIDOR_WEATHER_PARTIAL")
+    assert "refused requests from this server" in weather_message(
+        result, "CORRIDOR_WEATHER_PARTIAL"
+    )
     assert all(
         c.risk.overall is not RiskLevel.UNKNOWN for r in result.routes for c in r.checkpoints
     )
     assert all(set(cell.risk) == {-1} for cell in result.corridor.cells)
 
 
-def test_rate_limited_checkpoint_weather_says_to_wait(monkeypatch) -> None:
-    install(monkeypatch, weather=FakeWeather(fail_calls=(0, 1), rate_limited=True))
+def test_rate_limited_checkpoint_weather_quotes_the_provider_reason(monkeypatch) -> None:
+    # Regression (VF-17): production 429s said "per-minute" without evidence; the advice must
+    # follow Open-Meteo's own reason.
+    daily = "Daily API request limit exceeded. Please try again tomorrow."
+    install(
+        monkeypatch,
+        weather=FakeWeather(fail_calls=(0,), rate_limited=True, rate_limit_reason=daily),
+    )
 
     result = planner.plan_trip(command(), now=NOW)
 
     assert result.recommendation.status is RecommendationStatus.NO_WEATHER_DATA
     assert weather_codes(result) == ["WEATHER_UNAVAILABLE", "CORRIDOR_WEATHER_PARTIAL"]
-    assert "wait about a minute" in weather_message(result, "WEATHER_UNAVAILABLE")
+    message = weather_message(result, "WEATHER_UNAVAILABLE")
+    assert f'Open-Meteo said: "{daily}"' in message
+    assert "try again tomorrow" in message
+    assert "minute" not in message.replace(daily, "")
     # The hint is given once.
-    assert "per-minute" not in weather_message(result, "CORRIDOR_WEATHER_PARTIAL")
+    assert "Open-Meteo said" not in weather_message(result, "CORRIDOR_WEATHER_PARTIAL")
+
+
+def test_refused_checkpoint_weather_skips_the_heatmap_request(monkeypatch) -> None:
+    # Regression (VF-17): after a 429 on checkpoints, cell requests would be refused too.
+    weather = install(monkeypatch, weather=FakeWeather(fail_calls=(0,), rate_limited=True))
+
+    result = planner.plan_trip(command(), now=NOW)
+
+    assert weather.network == [True, False]
+    assert all(set(cell.risk) == {-1} for cell in result.corridor.cells)
+
+
+@pytest.mark.parametrize(
+    ("reason", "advice"),
+    [
+        (
+            "Minutely API request limit exceeded. Please try again in one minute.",
+            "Wait about a minute",
+        ),
+        (
+            "Hourly API request limit exceeded. Please try again in the next hour.",
+            "later this hour",
+        ),
+        ("", "Try again later."),
+    ],
+)
+def test_rate_limit_advice_follows_the_reason(monkeypatch, reason: str, advice: str) -> None:
+    install(
+        monkeypatch,
+        weather=FakeWeather(fail_calls=(0,), rate_limited=True, rate_limit_reason=reason),
+    )
+
+    result = planner.plan_trip(command(), now=NOW)
+
+    assert advice in weather_message(result, "WEATHER_UNAVAILABLE")

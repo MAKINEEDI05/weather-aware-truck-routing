@@ -146,7 +146,8 @@ Services monkeypatched with the synthetic routes and generated series:
 - weather partially missing → `WEATHER_PARTIAL` and UNKNOWN checkpoints
 - weather entirely missing → `WEATHER_UNAVAILABLE` and `NO_WEATHER_DATA`
 - checkpoints fetched before cells; heatmap-only failure → only `CORRIDOR_WEATHER_PARTIAL`, still
-  `RECOMMENDED`; rate-limited failure → "wait about a minute" hint, given once (regressions, VF-11)
+  `RECOMMENDED`; rate-limited failure → advice taken from Open-Meteo's reason (minute/hour/daily/
+  unknown), given once; refused checkpoints → cells fetched cache-only (regressions, VF-11, VF-17)
 - weather window covers the latest arrival
 - deterministic output for the same input
 

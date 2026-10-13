@@ -98,8 +98,17 @@ Not verified live (tests only): TomTom 401/403/429/5xx error bodies; real No Tra
 - [ ] Landing illustration — 1760 × 1240 px WebP/PNG ≤ 300 KB → `frontend/public/brand/hero.webp`, set `HERO_ILLUSTRATION_SRC`
 - [ ] (Optional) favicon — 32 × 32 SVG → `frontend/public/favicon.svg`
 
+## M12 — Production weather investigation (2026-10-13)
+
+- [x] Deployed frontend (Vercel) ↔ backend (Render) verified: CORS, HTTPS, health, geocoding, TomTom routing, UI at 1440/375 px
+- [x] Root-cause evidence for production weather failure (VF-17): HTTP 429 at any volume from Render only; no quota headers; per-IP limits (Open-Meteo) + shared regional egress IPs (Render)
+- [x] DEC-58 (uncommitted): keep/log/show Open-Meteo's 429 reason; advice follows it; cells cache-only after a refusal; backend 257 passed
+- [ ] Deploy DEC-58, plan one trip, read the quoted reason in the warning or Render log (`batch_failed … reason=`)
+- [ ] Choose the operational fix based on that reason (B-4)
+
 ## Blockers (see `docs/DECISIONS.md` §8)
 
 - [x] ~~B-1 TomTom API key~~ — resolved 2026-10-12
 - [ ] B-2 TomTom terms to be read by the user (OPEN-10)
 - [ ] B-3 Hosting choice and deployment authorisation
+- [ ] B-4 Open-Meteo refuses the Render backend (HTTP 429, VF-17)

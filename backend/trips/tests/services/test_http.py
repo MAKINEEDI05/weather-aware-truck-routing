@@ -88,6 +88,18 @@ def test_rate_limit_carries_retry_after_and_is_not_retried_by_default() -> None:
 
 
 @responses.activate
+def test_rate_limit_keeps_the_provider_reason() -> None:
+    # Regression (VF-17): Open-Meteo explains which limit was hit in a JSON "reason".
+    reason = "Daily API request limit exceeded. Please try again tomorrow."
+    responses.get(URL, status=429, json={"error": True, "reason": reason})
+
+    with pytest.raises(ProviderRateLimited) as caught:
+        call()
+    assert caught.value.detail == reason
+    assert reason in caught.value.message
+
+
+@responses.activate
 def test_rate_limit_is_retried_when_caller_allows() -> None:
     responses.get(URL, status=429)
     responses.get(URL, json=[1])

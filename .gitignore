@@ -21,6 +21,7 @@ frontend/coverage/
 
 # Local design references (not committed)
 design/
+brag-output/
 
 # Assessment brief (kept locally, not published)
 fs-assessment-spotter.pdf
