@@ -16,7 +16,7 @@ run and its result observed.
 | M7 Frontend shell, landing, About | Phases 7–8 | Done (2026-10-12) |
 | M8 Frontend features | Phases 7–8 | Done (2026-10-12) |
 | M9 QA | Phase 9 | Done (2026-10-12) |
-| M10 Deployment readiness | Phase 10 (no deploy) | Done — not deployed (B-3) |
+| M10 Deployment | Phase 10 | Done — deployed 2026-10-13 (Vercel + Render Virginia) |
 | M11 Final integration verification | — | Done (2026-10-12) |
 
 ## M0 — Project foundation (done 2026-10-12)
@@ -64,13 +64,14 @@ run and its result observed.
 - [x] Secret checks: no key or TomTom URL in the bundle; only `.env.example` files tracked; no key in logs or responses
 - [x] TomTom live verification and route-count evidence — done in M11
 
-## M10 — Deployment readiness (done 2026-10-12, not deployed)
+## M10 — Deployment (readiness 2026-10-12, deployed 2026-10-13)
 
 - [x] README (setup, tests, verification log, deployment, attribution, limitations), `docs/DEMO_SCRIPT.md`
 - [x] Production settings (TLS proxy, HSTS, SSL redirect, X-Frame-Options); `check --deploy` clean with production env
 - [x] `.env.example` files complete; SPA rewrites (`public/_redirects`, `vercel.json`); gunicorn start command
 - [x] Docs reconciled with the code (architecture, test plan, traceability, decisions)
-- [ ] Deploy and record the Loom (B-3)
+- [x] Deployed: frontend https://weather-routing-planner.vercel.app, backend https://weather-routing-api-va.onrender.com
+- [ ] Record the Loom walkthrough (`docs/DEMO_SCRIPT.md`)
 
 ## M11 — Final integration verification (done 2026-10-12)
 
@@ -102,13 +103,15 @@ Not verified live (tests only): TomTom 401/403/429/5xx error bodies; real No Tra
 
 - [x] Deployed frontend (Vercel) ↔ backend (Render) verified: CORS, HTTPS, health, geocoding, TomTom routing, UI at 1440/375 px
 - [x] Root-cause evidence for production weather failure (VF-17): HTTP 429 at any volume from Render only; no quota headers; per-IP limits (Open-Meteo) + shared regional egress IPs (Render)
-- [x] DEC-58 (uncommitted): keep/log/show Open-Meteo's 429 reason; advice follows it; cells cache-only after a refusal; backend 257 passed
-- [ ] Deploy DEC-58, plan one trip, read the quoted reason in the warning or Render log (`batch_failed … reason=`)
-- [ ] Choose the operational fix based on that reason (B-4)
+- [x] DEC-58 (`1433917`): keep/log/show Open-Meteo's 429 reason; advice follows it; cells cache-only after a refusal; backend 257 passed
+- [x] DEC-58 deployed (`1433917`); Open-Meteo's reason read: "Daily API request limit exceeded. Please try again tomorrow."
+- [x] Fix chosen: new Render service in Virginia → full weather (VF-18); Vercel now points at it
+- [ ] Suspend the old Oregon Render service
+- [ ] Permanent fix if Virginia's quota ever runs out: paid Open-Meteo key or browser-side weather (B-4)
 
 ## Blockers (see `docs/DECISIONS.md` §8)
 
 - [x] ~~B-1 TomTom API key~~ — resolved 2026-10-12
 - [ ] B-2 TomTom terms to be read by the user (OPEN-10)
-- [ ] B-3 Hosting choice and deployment authorisation
-- [ ] B-4 Open-Meteo refuses the Render backend (HTTP 429, VF-17)
+- [x] ~~B-3 Hosting and deployment~~ — resolved 2026-10-13
+- [ ] B-4 Open-Meteo shared-IP quota — mitigated (Virginia region), permanent fix open

@@ -4,7 +4,8 @@ Record against the **hosted** app with a real TomTom key. Show only real behavio
 weather is calm, say so and demonstrate the rules through the tests instead.
 
 **Before recording**
-- [ ] Backend warmed up (`/api/v1/health/` returns 200).
+- [ ] Backend warmed up: open https://weather-routing-api-va.onrender.com/api/v1/health/ about a minute before (free instance sleeps).
+- [ ] App open at https://weather-routing-planner.vercel.app.
 - [ ] Demo trip Chicago, IL → Denver, CO plans successfully; note how many routes TomTom returns.
 - [ ] DevTools Network panel ready (filter out map tiles).
 - [ ] A terminal with `backend/` and the venv active.

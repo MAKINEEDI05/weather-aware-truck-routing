@@ -3,9 +3,10 @@
 A React + Django web app that helps a truck driver choose the safest route based on forecast
 weather, load weight and travel time (Spotter full-stack assessment).
 
-> **Status (2026-10-12):** feature-complete and **verified end to end against the live TomTom and
-> Open-Meteo APIs**, including in a browser at desktop and mobile widths. The app is **not deployed**
-> yet and the Loom walkthrough is not recorded. See [Verification log](#verification-log) and
+> **Status (2026-10-13):** feature-complete, **deployed** and verified end to end against the live
+> TomTom and Open-Meteo APIs.
+> **App:** [weather-routing-planner.vercel.app](https://weather-routing-planner.vercel.app) · **API:** [weather-routing-api-va.onrender.com](https://weather-routing-api-va.onrender.com/api/v1/health/)
+> The Loom walkthrough is not recorded yet. See [Verification log](#verification-log) and
 > [Remaining work](#remaining-work).
 
 ## What it does
@@ -146,6 +147,15 @@ limit, so space live runs about a minute apart.
 | Backend without a key | `503 ROUTING_NOT_CONFIGURED`; no key in logs |
 | Secret scan | key prefix absent from all 152 committable files and the built bundle; `backend/.env` ignored |
 
+**Production (2026-10-13)**
+
+| Check | Result |
+|---|---|
+| Frontend (Vercel) → backend (Render): health, CORS for the Vercel origin only, HTTP→HTTPS redirect, JSON 404, security headers, field validation | pass |
+| Render **Oregon** backend: Chicago → Denver plan | 3 TomTom routes; **weather refused** — HTTP 429 "Daily API request limit exceeded. Please try again tomorrow." (VF-17) |
+| Render **Virginia** backend: same plan | 3 routes in 8.8 s; **143 of 143 checkpoints** and all 6,370 heatmap cell-hours with forecasts; `RECOMMENDED` (VF-18) |
+| Browser run against the hosted app (Oregon backend, before the move) | desktop 22/24, mobile 20/21 checks passed; the failures were the weather outage and one outdated check in my script |
+
 **Verified with mocked tests**
 
 | Check | Result |
@@ -160,8 +170,18 @@ documented formats), and real No Travel or Severe weather (today's forecasts wer
 
 ## Deployment
 
-Not deployed. Hosts are a decision for the owner (OPEN-9). The steps below are for a Python web
-service (e.g. Render, Railway, Fly.io) plus a static host (e.g. Vercel, Netlify).
+**Live (2026-10-13):** frontend on **Vercel** (https://weather-routing-planner.vercel.app), backend on **Render**, region **Virginia
+(US East)** (https://weather-routing-api-va.onrender.com).
+
+- **Use a region other than Oregon.** A first Render service in Oregon got HTTP 429 "Daily API
+  request limit exceeded" from Open-Meteo on every request, because Open-Meteo's free quota is per
+  IP and Render's outbound IPs are shared by all services in a region. The same code in Virginia
+  gets full weather (VF-17, VF-18).
+- **Free instances sleep** after about 15 minutes idle; open `https://weather-routing-api-va.onrender.com/api/v1/health/` about a minute
+  before a demo.
+
+The steps below work for any Python web service (Render, Railway, Fly.io) plus a static host
+(Vercel, Netlify).
 
 **Backend** (root directory `backend/`):
 
@@ -216,12 +236,12 @@ and set `VITE_API_BASE_URL=https://<backend-host>/api/v1` at build time. SPA rew
 
 ## Known limitations
 
-- **Weather on the hosted backend (2026-10-13):** Open-Meteo refuses every forecast request from the
-  Render deployment with HTTP 429, even for a two-request trip, while the same requests work
-  locally (VF-17). Open-Meteo's free limits are per IP and Render's outbound IPs are shared by all
-  services in a region, so the quota is most likely used up by other tenants. The app degrades as
-  designed (routes shown, checkpoints Unknown, no recommendation). After deploying DEC-58, the
-  warning and the Render log quote Open-Meteo's exact reason; the fix depends on which limit it names.
+- **Weather on the hosted backend depends on a shared free quota.** Open-Meteo's free limits are
+  per IP, and Render's outbound IPs are shared with other apps in the same region. The Oregon region
+  was refused ("Daily API request limit exceeded"); Virginia works (VF-17, VF-18), but its quota
+  could also run out someday. If it does, the app still shows routes, marks checkpoints Unknown,
+  and quotes Open-Meteo's exact reason (DEC-58). The permanent fixes are a paid Open-Meteo API key
+  or fetching weather from each visitor's browser (B-4).
 - ETAs assume continuous driving, so ETAs on long trips are optimistic.
 - Forecasts are predictions for a model grid cell, which can be a few km from the road.
 - When TomTom returns fewer than 3 routes, only those are shown, with a warning. The live evidence
@@ -240,9 +260,10 @@ and set `VITE_API_BASE_URL=https://<backend-host>/api/v1` at build time. SPA rew
 
 ## Remaining work
 
-1. Commit the work (the owner commits; see `git status`), add a GitHub remote and push.
-2. Read the TomTom terms (OPEN-10).
-3. Deploy (see above), then run the post-deploy checks and record the Loom walkthrough
-   ([`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md)).
+1. Suspend the old Render service in Oregon (it cannot get weather; Virginia is the live backend).
+2. Record the Loom walkthrough against the hosted app ([`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md)).
+3. Read the TomTom terms (OPEN-10).
 4. Supply brand assets: logo mark and landing illustration
    ([`frontend/src/assets/brand.ts`](frontend/src/assets/brand.ts)).
+5. If Open-Meteo's quota is ever refused again: add a paid Open-Meteo key or move weather fetching
+   to the browser (B-4).
