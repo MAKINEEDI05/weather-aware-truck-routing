@@ -71,7 +71,7 @@ run and its result observed.
 - [x] `.env.example` files complete; SPA rewrites (`public/_redirects`, `vercel.json`); gunicorn start command
 - [x] Docs reconciled with the code (architecture, test plan, traceability, decisions)
 - [x] Deployed: frontend https://weather-routing-planner.vercel.app, backend https://weather-routing-api-va.onrender.com
-- [ ] Record the Loom walkthrough (`docs/DEMO_SCRIPT.md`)
+- [x] Walkthrough video recorded (8 min, `docs/DEMO_SCRIPT.md`): https://youtu.be/YuJrNJtWlVU
 
 ## M11 — Final integration verification (done 2026-10-12)
 

@@ -6,8 +6,8 @@ weather, load weight and travel time (Spotter full-stack assessment).
 > **Status (2026-10-13):** feature-complete, **deployed** and verified end to end against the live
 > TomTom and Open-Meteo APIs.
 > **App:** [weather-routing-planner.vercel.app](https://weather-routing-planner.vercel.app) · **API:** [weather-routing-api-va.onrender.com](https://weather-routing-api-va.onrender.com/api/v1/health/)
-> The Loom walkthrough is not recorded yet. See [Verification log](#verification-log) and
-> [Remaining work](#remaining-work).
+> **Walkthrough video (8 min):** [youtu.be/YuJrNJtWlVU](https://youtu.be/YuJrNJtWlVU)
+> See [Verification log](#verification-log) and [Remaining work](#remaining-work).
 
 ## What it does
 
@@ -261,9 +261,8 @@ and set `VITE_API_BASE_URL=https://<backend-host>/api/v1` at build time. SPA rew
 ## Remaining work
 
 1. Suspend the old Render service in Oregon (it cannot get weather; Virginia is the live backend).
-2. Record the Loom walkthrough against the hosted app ([`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md)).
-3. Read the TomTom terms (OPEN-10).
-4. Supply brand assets: logo mark and landing illustration
+2. Read the TomTom terms (OPEN-10).
+3. Supply brand assets: logo mark and landing illustration
    ([`frontend/src/assets/brand.ts`](frontend/src/assets/brand.ts)).
-5. If Open-Meteo's quota is ever refused again: add a paid Open-Meteo key or move weather fetching
+4. If Open-Meteo's quota is ever refused again: add a paid Open-Meteo key or move weather fetching
    to the browser (B-4).
