@@ -1,7 +1,7 @@
 # Weather-Aware Truck Routing
 
 A React + Django web app that helps a truck driver choose the safest route based on forecast
-weather, load weight and travel time (Spotter full-stack assessment).
+weather, load weight and travel time (Spotter full-stack project).
 
 > **Status (2026-10-13):** feature-complete, **deployed** and verified end to end against the live
 > TomTom and Open-Meteo APIs.
@@ -17,7 +17,7 @@ weather, load weight and travel time (Spotter full-stack assessment).
    returned (target 3; routes are never invented).
 3. Along each route, checkpoints are placed every N miles plus at the destination. Each gets an
    **ETA** from TomTom's cumulative travel times and the **Open-Meteo** forecast for that hour.
-4. Wind, rain and snow are classified with the assessment's thresholds and load rules: Low,
+4. Wind, rain and snow are classified with the specified thresholds and load rules: Low,
    Moderate, High, Severe, No Travel. A missing forecast is **Unknown**, never Low.
 5. Routes are ranked strictly by **fewest Severe miles → fewest High miles → lowest average risk
    → shortest travel time**. A route with any No Travel miles keeps its rank but is not
@@ -47,7 +47,7 @@ recommendation `/recommendation`, heatmap `/heatmap`, about `/about`.
 
 ## Rules as implemented
 
-Thresholds and load rules are the assessment's, quoted in
+Thresholds and load rules come from the project spec and are quoted in
 [`backend/trips/domain/risk.py`](backend/trips/domain/risk.py). Interpretations where the PDF is
 ambiguous ([`docs/DECISIONS.md`](docs/DECISIONS.md)):
 
